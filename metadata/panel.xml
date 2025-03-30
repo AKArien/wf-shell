@@ -10,7 +10,10 @@
 		<default></default>
 	</option>
 	<option name="widgets_left" type="string">
-		<_short>Widgets Left</_short>
+		<_short>Widgets Left/Top</_short>
+ 		<_long>
+ 			Widgets placed in the left zone of the bar, or top if the bar is vertical.
+ 		</_long>
 		<default>menu spacing4 launchers window-list</default>
 	</option>
 	<option name="widgets_center" type="string">
@@ -18,12 +21,32 @@
 		<default>none</default>
 	</option>
 	<option name="widgets_right" type="string">
-		<_short>Widgets Right</_short>
+		<_short>Widgets Right/Bottom</_short>
+ 		<_long>
+ 			Widgets placed in the right zone of the bar, or bottom if the bar is vertical.
+ 		</_long>
 		<default>volume network battery clock</default>
 	</option>
 	<option name="minimal_height" type="int">
 		<_short>Minimal Height</_short>
+ 		<_long>
+ 			Minimum height the panel takes.
+ 		</_long>
 		<default>24</default>
+	</option>
+	<option name="minimal_width" type="int">
+		<_short>Minimal Width</_short>
+ 		<_long>
+ 			Minimum width the panel takes.
+ 		</_long>
+		<default>24</default>
+	</option>
+	<option name="span_full_edge" type="bool">
+		<_short>Span whole side</_short>
+		<_long>
+			Wether the pannel should extend all the way to the left and right ; or top and bottom depending on orientation.
+		</_long>
+		<default>true</default>
 	</option>
 	<option name="autohide" type="bool">
 		<_short>Autohide</_short>
@@ -60,6 +83,14 @@
 		<desc>
 			<value>bottom</value>
 			<_name>Bottom</_name>
+		</desc>
+		<desc>
+			<value>left</value>
+			<_name>Left</_name>
+		</desc>
+		<desc>
+			<value>right</value>
+			<_name>Right</_name>
 		</desc>
 	</option>
 	<option name="edge_offset" type="int">
