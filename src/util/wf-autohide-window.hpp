@@ -12,6 +12,8 @@ struct zwf_hotspot_v2;
 
 #define WF_WINDOW_POSITION_TOP    "top"
 #define WF_WINDOW_POSITION_BOTTOM "bottom"
+#define WF_WINDOW_POSITION_LEFT   "left"
+#define WF_WINDOW_POSITION_RIGHT  "right"
 
 struct WayfireAutohidingWindowHotspotCallbacks;
 /**
@@ -85,7 +87,7 @@ class WayfireAutohidingWindow : public Gtk::Window
     WfOption<std::string> position;
     void update_position();
 
-    wf::animation::simple_animation_t y_position;
+    wf::animation::simple_animation_t autohide_animation;
     bool update_margin();
 
     WfOption<int> edge_offset;

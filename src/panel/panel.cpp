@@ -104,18 +104,48 @@ class WayfirePanel::impl
     };
 
     WfOption<int> minimal_panel_height{"panel/minimal_height"};
+    WfOption<int> minimal_panel_width{"panel/minimal_width"};
+    WfOption<bool> full_edge{"panel/span_full_edge"};
+
+    WfOption<std::string> panel_position{"panel/position"};
+
+	void update_orientation(){
+		bool is_horizontal = ((std::string)panel_position == "top" or (std::string)panel_position == "bottom");
+
+ 		if (is_horizontal){
+	 		if (full_edge){ // if the panel is supposed to expand trough the whole edge, set anchors to stretch it
+				gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_LEFT, true);
+				gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_RIGHT, true);
+	 		}
+ 			content_box.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
+  			left_box.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
+ 			center_box.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
+			right_box.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
+		}
+ 		else{
+	 		if (full_edge){
+				gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_TOP, true);
+				gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_BOTTOM, true);
+	 		}
+ 			content_box.set_orientation(Gtk::ORIENTATION_VERTICAL);
+ 			left_box.set_orientation(Gtk::ORIENTATION_VERTICAL);
+ 			center_box.set_orientation(Gtk::ORIENTATION_VERTICAL);
+			right_box.set_orientation(Gtk::ORIENTATION_VERTICAL);
+ 		}
+
+
+	}
 
     void create_window()
     {
         window = std::make_unique<WayfireAutohidingWindow>(output, "panel");
-        window->set_size_request(1, minimal_panel_height);
+        window->set_size_request(minimal_panel_width, minimal_panel_height); // addition of minimal panel width for the panel on the left or right instead of reusing m. p. height allows for the inclusion of non-stretched bar (like the gnome dock, or the kde setting to let the bar contract)
         window->get_style_context()->add_class("wf-panel");
         panel_layer.set_callback(set_panel_layer);
         set_panel_layer(); // initial setting
 
-        gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_LEFT, true);
-        gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_RIGHT, true);
-
+		update_orientation();
+		
         bg_color.set_callback(on_window_color_updated);
         on_window_color_updated(); // set initial color
 
@@ -139,6 +169,9 @@ class WayfirePanel::impl
         left_box.get_style_context()->add_class("left");
         center_box.get_style_context()->add_class("center");
         right_box.get_style_context()->add_class("right");
+
+		update_orientation();
+
         content_box.pack_start(left_box, false, false);
         content_box.pack_end(right_box, false, false);
         if (!center_box.get_children().empty())
@@ -330,6 +363,8 @@ class WayfirePanel::impl
 
     void handle_config_reload()
     {
+		update_orientation();
+	    
         for (auto& w : left_widgets)
         {
             w->handle_config_reload();
