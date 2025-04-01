@@ -359,7 +359,8 @@ bool WayfireAutohidingWindow::should_autohide() const
 
 bool WayfireAutohidingWindow::m_do_hide()
 {
-    if ((std::string)position == WF_WINDOW_POSITION_LEFT or (std::string)position == WF_WINDOW_POSITION_RIGHT)
+	std::string direction = check_position((std::string)position);
+    if (direction == WF_WINDOW_POSITION_LEFT or direction == WF_WINDOW_POSITION_RIGHT)
     {
         autohide_animation.animate(-get_allocated_width());
     }
