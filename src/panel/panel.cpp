@@ -110,7 +110,7 @@ class WayfirePanel::impl
     WfOption<std::string> panel_position{"panel/position"};
 
 	void update_orientation(){
-		bool is_horizontal = ((std::string)panel_position == "top" or (std::string)panel_position == "bottom");
+		bool is_horizontal = !((std::string)panel_position == "left" or (std::string)panel_position == "right"); // not the most pretty, but if the value is top, down or something invalid, it works the same
 
  		if (is_horizontal){
 	 		if (full_edge){ // if the panel is supposed to expand trough the whole edge, set anchors to stretch it

@@ -70,6 +70,9 @@ class WayfireWindowList : public WayfireWidget
     WayfireWindowList(WayfireOutput *output);
     virtual ~WayfireWindowList();
 
+    void handle_config_reload();
+    void update_layout();
+
     void handle_toplevel_manager(zwlr_foreign_toplevel_manager_v1 *manager);
     void handle_toplevel_closed(zwlr_foreign_toplevel_handle_v1 *handle);
     void handle_new_toplevel(zwlr_foreign_toplevel_handle_v1 *handle);

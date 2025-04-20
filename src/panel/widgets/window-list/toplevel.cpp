@@ -64,6 +64,8 @@ class WayfireToplevel::impl
         button.add(button_contents);
         button.set_tooltip_text("none");
 
+		update_layout();
+
         button.signal_clicked().connect_notify(
             sigc::mem_fun(this, &WayfireToplevel::impl::on_clicked));
         button.signal_size_allocate().connect_notify(
@@ -121,6 +123,19 @@ class WayfireToplevel::impl
 
         this->window_list = window_list;
     }
+
+	void update_layout(){
+		std::string panel_position = WfOption<std::string> {"panel/position"};
+
+		if (panel_position == PANEL_POSITION_LEFT or panel_position == PANEL_POSITION_RIGHT){
+			label.set_angle(90);
+			button_contents.set_orientation(Gtk::ORIENTATION_VERTICAL);
+		}
+		else {
+			label.set_angle(0);
+			button_contents.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
+		}
+	}
 
     int grab_off_x;
     double grab_start_x, grab_start_y;
@@ -538,6 +553,11 @@ WayfireToplevel::WayfireToplevel(WayfireWindowList *window_list,
     zwlr_foreign_toplevel_handle_v1 *handle) :
     pimpl(new WayfireToplevel::impl(window_list, handle))
 {}
+
+void WayfireToplevel::handle_config_reload()
+{
+    pimpl->update_layout();
+}
 
 void WayfireToplevel::set_width(int pixels)
 {

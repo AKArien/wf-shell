@@ -114,8 +114,9 @@ class WayfireAutohidingWindow : public Gtk::Window
     /** Show the window but hide if no pointer input */
     void m_show_uncertain();
 
-    int32_t last_hotspot_height = -1;
-    bool input_inside_panel     = false;
+	std::string last_position = "";
+    int32_t last_hotspot_size = -1;
+    bool input_inside_panel   = false;
     zwf_hotspot_v2 *edge_hotspot  = NULL;
     zwf_hotspot_v2 *panel_hotspot = NULL;
     std::unique_ptr<WayfireAutohidingWindowHotspotCallbacks> edge_callbacks;

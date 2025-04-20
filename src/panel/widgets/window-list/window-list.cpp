@@ -199,7 +199,31 @@ void WayfireWindowList::init(Gtk::HBox *container)
     scrolled_window.set_propagate_natural_width(true);
     scrolled_window.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_NEVER);
     container->pack_start(scrolled_window, true, true);
+
+	update_layout();
+    
     scrolled_window.show_all();
+}
+
+void WayfireWindowList::handle_config_reload(){
+	update_layout();
+}
+
+void WayfireWindowList::update_layout(){
+    std::string panel_position = WfOption<std::string> {"panel/position"};
+    if (panel_position == PANEL_POSITION_TOP or panel_position == PANEL_POSITION_BOTTOM){
+	    box.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
+    }
+    else if (panel_position == PANEL_POSITION_LEFT or panel_position == PANEL_POSITION_RIGHT){
+	    box.set_orientation(Gtk::ORIENTATION_VERTICAL);
+    }
+	for (const auto& entry : toplevels){
+		WayfireToplevel* toplevel = entry.second.get();
+		if (toplevel){
+			toplevel->handle_config_reload();
+		}
+		// entry.second.get()/* each WayfireToplevel*/->handle_config_reload();
+	}
 }
 
 void WayfireWindowList::set_button_width(int width)

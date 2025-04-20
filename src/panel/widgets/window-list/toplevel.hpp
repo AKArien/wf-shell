@@ -33,6 +33,8 @@ class WayfireToplevel
     std::vector<zwlr_foreign_toplevel_handle_v1*>& get_children();
     ~WayfireToplevel();
 
+    void handle_config_reload();
+
     class impl;
 
   private:

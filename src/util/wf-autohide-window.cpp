@@ -216,14 +216,27 @@ static zwf_hotspot_v2_listener hotspot_listener = {
 void WayfireAutohidingWindow::setup_hotspot()
 {
     /* No need to recreate hotspots if the height didn't change */
-    if ((this->get_allocated_height() == last_hotspot_height) && (edge_offset == last_edge_offset))
+
+    auto position = check_position(this->position);
+
+ 	int allocated;
+    if (position == WF_WINDOW_POSITION_LEFT or position == WF_WINDOW_POSITION_RIGHT)
+    {
+		allocated = this->get_allocated_width();
+    }
+    else
+    {
+		allocated = this->get_allocated_height();
+    }
+
+    if ((allocated == last_hotspot_size) && (edge_offset == last_edge_offset) && (position == last_position))
     {
         return;
     }
 
-    this->last_hotspot_height = get_allocated_height();
-    this->last_edge_offset    = edge_offset;
-
+    this->last_hotspot_size = allocated;
+    this->last_edge_offset  = edge_offset;
+    this->last_position     = position;
     if (this->edge_hotspot)
     {
         zwf_hotspot_v2_destroy(edge_hotspot);
@@ -233,8 +246,6 @@ void WayfireAutohidingWindow::setup_hotspot()
     {
         zwf_hotspot_v2_destroy(panel_hotspot);
     }
-
-    auto position = check_position(this->position);
 
 	uint32_t edge;
     if (position == WF_WINDOW_POSITION_TOP){
@@ -312,8 +323,19 @@ void WayfireAutohidingWindow::setup_auto_exclusive_zone()
 
 void WayfireAutohidingWindow::update_auto_exclusive_zone()
 {
-    int allocated_height = get_allocated_height();
-    int new_zone_size    = this->auto_exclusive_zone ? allocated_height : 0;
+ 	std::string direction = check_position((std::string)position);
+ 	int allocated;
+    if (direction == WF_WINDOW_POSITION_LEFT or direction == WF_WINDOW_POSITION_RIGHT)
+    {
+		allocated = get_allocated_width();
+
+    }
+    else
+    {
+		allocated = get_allocated_height();
+    }
+
+    int new_zone_size    = this->auto_exclusive_zone ? allocated : 0;
 
     if (new_zone_size != this->auto_exclusive_zone_size)
     {
