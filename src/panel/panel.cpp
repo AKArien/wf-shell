@@ -113,20 +113,19 @@ class WayfirePanel::impl
 		bool is_horizontal = !((std::string)panel_position == "left" or (std::string)panel_position == "right"); // not the most pretty, but if the value is top, down or something invalid, it works the same
 
  		if (is_horizontal){
-	 		if (full_edge){ // if the panel is supposed to expand trough the whole edge, set anchors to stretch it
-				gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_LEFT, true);
-				gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_RIGHT, true);
-	 		}
+	 		// if the panel is supposed to expand trough the whole edge, set anchors to stretch it
+			gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_LEFT, full_edge);
+			gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_RIGHT, full_edge);
+	 		
  			content_box.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
   			left_box.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
  			center_box.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
 			right_box.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
 		}
  		else{
-	 		if (full_edge){
-				gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_TOP, true);
-				gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_BOTTOM, true);
-	 		}
+			gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_TOP, full_edge);
+			gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_BOTTOM, full_edge);
+	 		
  			content_box.set_orientation(Gtk::ORIENTATION_VERTICAL);
  			left_box.set_orientation(Gtk::ORIENTATION_VERTICAL);
  			center_box.set_orientation(Gtk::ORIENTATION_VERTICAL);
