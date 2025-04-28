@@ -22,3 +22,18 @@ void WayfireStatusNotifier::remove_item(const Glib::ustring & service)
 {
     items.erase(service);
 }
+
+void WayfireStatusNotifier::update_layout(){
+       std::string panel_position = WfOption<std::string> {"panel/position"};
+
+       if (panel_position == PANEL_POSITION_LEFT or panel_position == PANEL_POSITION_RIGHT){
+               icons_hbox.set_orientation(Gtk::ORIENTATION_VERTICAL);
+       }
+       else {
+               icons_hbox.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
+       }
+}
+
+void WayfireStatusNotifier::handle_config_reload(){
+       update_layout();
+}
