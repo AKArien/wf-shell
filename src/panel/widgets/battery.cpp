@@ -221,6 +221,21 @@ bool WayfireBatteryInfo::setup_dbus()
     return false;
 }
 
+void WayfireBatteryInfo::update_layout(){
+       std::string panel_position = WfOption<std::string> {"panel/position"};
+
+       if (panel_position == PANEL_POSITION_LEFT or panel_position == PANEL_POSITION_RIGHT){
+               button_box.set_orientation(Gtk::ORIENTATION_VERTICAL);
+       }
+       else {
+               button_box.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
+       }
+}
+
+void WayfireBatteryInfo::handle_config_reload(){
+       update_layout();
+}
+
 // TODO: simplify config loading
 
 static const std::string default_font = "default";
