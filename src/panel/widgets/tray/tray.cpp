@@ -2,6 +2,7 @@
 
 void WayfireStatusNotifier::init(Gtk::HBox *container)
 {
+	update_layout();
     icons_hbox.get_style_context()->add_class("tray");
     container->add(icons_hbox);
 }

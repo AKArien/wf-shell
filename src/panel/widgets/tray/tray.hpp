@@ -14,6 +14,9 @@ class WayfireStatusNotifier : public WayfireWidget
     Gtk::HBox icons_hbox;
     std::map<Glib::ustring, StatusNotifierItem> items;
 
+    void update_layout();
+    void handle_config_reload();
+
   public:
     void init(Gtk::HBox *container) override;
 
