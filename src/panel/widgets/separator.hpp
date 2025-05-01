@@ -12,6 +12,8 @@ class WayfireSeparator : public WayfireWidget
     WayfireSeparator(int pixels);
 
     virtual void init(Gtk::HBox *container);
+    void update_layout();
+    void handle_config_reload();
     virtual ~WayfireSeparator()
     {}
 };

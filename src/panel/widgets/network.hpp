@@ -80,6 +80,7 @@ class WayfireNetworkInfo : public WayfireWidget
     void update_status();
 
     void init(Gtk::HBox *container);
+    void update_layout();
     void handle_config_reload();
     virtual ~WayfireNetworkInfo();
 };

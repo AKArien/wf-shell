@@ -422,8 +422,22 @@ void WayfireNetworkInfo::init(Gtk::HBox *container)
     handle_config_reload();
 }
 
+void WayfireNetworkInfo::update_layout(){
+       std::string panel_position = WfOption<std::string> {"panel/position"};
+
+       if (panel_position == PANEL_POSITION_LEFT or panel_position == PANEL_POSITION_RIGHT){
+	           status.set_angle(90);
+               button_content.set_orientation(Gtk::ORIENTATION_VERTICAL);
+       }
+       else {
+	           status.set_angle(0);
+               button_content.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
+       }
+}
+
 void WayfireNetworkInfo::handle_config_reload()
 {
+	update_layout();
     if ((std::string)status_font_opt == "default")
     {
         status.unset_font();
