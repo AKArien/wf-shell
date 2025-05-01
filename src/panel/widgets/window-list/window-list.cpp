@@ -220,7 +220,7 @@ void WayfireWindowList::update_layout(){
 	for (const auto& entry : toplevels){
 		WayfireToplevel* toplevel = entry.second.get();
 		if (toplevel){
-			toplevel->update_layout();
+			toplevel->handle_config_reload();
 		}
 	}
 }
