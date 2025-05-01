@@ -44,6 +44,9 @@ bool WfLauncherButton::initialize(std::string name, std::string icon, std::strin
         return false;
     }
 
+	m_icon.set_halign(Gtk::ALIGN_CENTER);
+	m_icon.set_valign(Gtk::ALIGN_CENTER);
+
     button.set_image(m_icon);
     auto style = button.get_style_context();
     style->add_class("flat");
@@ -151,6 +154,17 @@ void WayfireLaunchers::init(Gtk::HBox *container)
     box.get_style_context()->add_class("launchers");
     container->pack_start(box, false, false);
     handle_config_reload();
+}
+
+void WayfireLaunchers::update_layout(){
+       std::string panel_position = WfOption<std::string> {"panel/position"};
+
+       if (panel_position == PANEL_POSITION_LEFT or panel_position == PANEL_POSITION_RIGHT){
+               box.set_orientation(Gtk::ORIENTATION_VERTICAL);
+       }
+       else {
+               box.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
+       }
 }
 
 void WayfireLaunchers::handle_config_reload()
