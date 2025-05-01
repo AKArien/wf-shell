@@ -55,6 +55,18 @@ class WfDock::impl
             window->get_window()->gobj());
     }
 
+    void update_layout(){
+       std::string dock_position = WfOption<std::string> {"dock/position"};
+
+       if (dock_position == "left" or dock_position == "right"){
+               box.set_orientation(Gtk::ORIENTATION_VERTICAL);
+       }
+       else {
+               box.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
+       }
+
+    }
+
     void add_child(Gtk::Widget& widget)
     {
         box.pack_end(widget);
@@ -102,6 +114,10 @@ WfDock::WfDock(WayfireOutput *output) :
     pimpl(new impl(output))
 {}
 WfDock::~WfDock() = default;
+
+void WfDock::handle_config_reload(){
+	pimpl->update_layout();
+}
 
 void WfDock::add_child(Gtk::Widget& w)
 {
