@@ -268,7 +268,7 @@ void WayfireAutohidingWindow::setup_hotspot()
         edge, edge_offset, autohide_show_delay);
 
     this->panel_hotspot = zwf_output_v2_create_hotspot(output->output,
-        edge, this->get_allocated_height(), 0); // immediate
+        edge, allocated, 0); // immediate
 
     this->edge_callbacks =
         std::make_unique<WayfireAutohidingWindowHotspotCallbacks>();
