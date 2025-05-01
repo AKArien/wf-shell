@@ -153,6 +153,9 @@ void WayfireLaunchers::init(Gtk::HBox *container)
 {
     box.get_style_context()->add_class("launchers");
     container->pack_start(box, false, false);
+ 	box.set_halign(Gtk::ALIGN_CENTER);
+	box.set_valign(Gtk::ALIGN_CENTER);
+
     handle_config_reload();
 }
 
@@ -169,6 +172,7 @@ void WayfireLaunchers::update_layout(){
 
 void WayfireLaunchers::handle_config_reload()
 {
+	update_layout();
     box.set_spacing(WfOption<int>{"panel/launchers_spacing"});
 
     launchers = get_launchers_from_config();
