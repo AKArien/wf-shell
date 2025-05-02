@@ -13,7 +13,7 @@ class WayfireToplevel;
 class WayfireWindowListBox : public Gtk::HBox
 {
     Gtk::Widget *top_widget = nullptr;
-    int top_x = 0;
+    int top_pos = 0;
 
   public:
     WayfireWindowListBox();
@@ -23,7 +23,7 @@ class WayfireWindowListBox : public Gtk::HBox
      * widgets */
     void set_top_widget(Gtk::Widget *top = nullptr);
     /** Set the absolute position of the top widget */
-    void set_top_x(int x);
+    void set_top_pos(int pos);
 
     /**
      * Override some of Gtk::HBox's built-in layouting functions, so that we
@@ -85,9 +85,9 @@ class WayfireWindowList : public WayfireWidget
   private:
     void on_draw(const Cairo::RefPtr<Cairo::Context>&);
 
-    void set_button_width(int width);
-    int get_default_button_width();
-    int get_target_button_width();
+    void set_button_size(int size);
+    int get_default_button_size();
+    int get_target_button_size();
 };
 
 #endif /* end of include guard: WIDGETS_WINDOW_LIST_HPP */

@@ -17,6 +17,8 @@
 #include "panel.hpp"
 #include <cassert>
 
+#include "../../widget-utils.hpp"
+
 namespace
 {
 extern zwlr_foreign_toplevel_handle_v1_listener toplevel_handle_v1_impl;
@@ -137,9 +139,9 @@ class WayfireToplevel::impl
 		}
 	}
 
-    int grab_off_x;
+    int grab_off_pos;
     double grab_start_x, grab_start_y;
-    double grab_abs_start_x;
+    double grab_abs_start_pos;
     bool drag_exceeds_threshold;
 
     bool drag_paused()
@@ -161,32 +163,34 @@ class WayfireToplevel::impl
         window_list->box.set_top_widget(&button);
 
         /* Find the distance between pointer X and button origin */
-        int x = container.get_absolute_position(_x, button);
-        grab_abs_start_x = x;
+        int pos = container.get_absolute_position((widget_utils::is_panel_vertical() ? _y : _x), button);
+        grab_abs_start_pos = pos;
 
         /* Find button corner in window-relative coords */
-        int loc_x = container.get_absolute_position(0, button);
-        grab_off_x = x - loc_x;
+        int loc_pos = container.get_absolute_position(0, button);
+        grab_off_pos = pos - loc_pos;
 
         drag_exceeds_threshold = false;
     }
 
     static constexpr int DRAG_THRESHOLD = 3;
-    void on_drag_update(double _x, double)
+    void on_drag_update(double _pos, double)
     {
         auto& container = window_list->box;
         /* Window was not just clicked, but also dragged. Ignore the next click,
          * which is the one that happens when the drag gesture ends. */
         set_ignore_next_click();
 
-        int x = _x + grab_start_x;
-        x = container.get_absolute_position(x, button);
-        if (std::abs(x - grab_abs_start_x) > DRAG_THRESHOLD)
+        int pos = _pos + (widget_utils::is_panel_vertical() ? grab_start_y : grab_start_x);
+
+        pos = container.get_absolute_position(pos, button);
+
+        if (std::abs(pos - grab_abs_start_pos) > DRAG_THRESHOLD)
         {
             drag_exceeds_threshold = true;
         }
 
-        auto hovered_button = container.get_widget_at(x);
+        auto hovered_button = container.get_widget_at(pos);
 
         if ((hovered_button != &button) && hovered_button)
         {
@@ -197,8 +201,9 @@ class WayfireToplevel::impl
 
         /* Make sure the grabbed button always stays at the same relative position
          * to the DnD position */
-        int target_x = x - grab_off_x;
-        window_list->box.set_top_x(target_x);
+        int target_pos = pos - grab_off_pos;
+        
+        window_list->box.set_top_pos(target_pos);
     }
 
     void on_drag_end(double _x, double _y)
@@ -368,13 +373,13 @@ class WayfireToplevel::impl
         }
     }
 
-    int32_t max_width = 0;
+    int32_t max_size = 0;
     void set_title(std::string title)
     {
         this->title = title;
         button.set_tooltip_text(title);
 
-        set_max_width(max_width);
+        set_max_size(max_size);
     }
 
     Glib::ustring shorten_title(int show_chars)
@@ -397,31 +402,42 @@ class WayfireToplevel::impl
         return short_title;
     }
 
-    int get_button_preferred_width()
+    int get_button_preferred_size()
     {
-        int min_width, preferred_width;
-        button.get_preferred_width(min_width, preferred_width);
+        int min_size, preferred_size;
+        if (widget_utils::is_panel_vertical()){
+	        button.get_preferred_height(min_size, preferred_size);
+        }
+        else{
+            button.get_preferred_width(min_size, preferred_size);
 
-        return preferred_width;
+        }
+
+        return preferred_size;
     }
 
-    void set_max_width(int width)
+    void set_max_size(int size)
     {
-        this->max_width = width;
-        if (max_width == 0)
+        this->max_size = size;
+        if (max_size == 0)
         {
             this->button.set_size_request(-1, -1);
             this->label.set_label(title);
             return;
         }
 
-        this->button.set_size_request(width, -1);
+		if (widget_utils::is_panel_vertical()){
+	        this->button.set_size_request(-1, size);
+        }
+		else {
+	        this->button.set_size_request(size, -1);
+		}
 
         int show_chars = 0;
         for (show_chars = title.length(); show_chars > 0; show_chars--)
         {
             this->label.set_text(shorten_title(show_chars));
-            if (get_button_preferred_width() <= max_width)
+            if (get_button_preferred_size() <= max_size)
             {
                 break;
             }
@@ -559,9 +575,9 @@ void WayfireToplevel::handle_config_reload()
     pimpl->update_layout();
 }
 
-void WayfireToplevel::set_width(int pixels)
+void WayfireToplevel::set_size(int pixels)
 {
-    return pimpl->set_max_width(pixels);
+    return pimpl->set_max_size(pixels);
 }
 
 std::vector<zwlr_foreign_toplevel_handle_v1*>& WayfireToplevel::get_children()

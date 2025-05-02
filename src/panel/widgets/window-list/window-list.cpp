@@ -6,6 +6,8 @@
 #include "window-list.hpp"
 #include "panel.hpp"
 
+#include "../../widget-utils.hpp"
+
 WayfireWindowListBox::WayfireWindowListBox() : Gtk::HBox()
 {}
 
@@ -17,26 +19,31 @@ void WayfireWindowListBox::set_top_widget(Gtk::Widget *top)
     {
         /* Set original top_x to where the widget currently is, so that we don't
          * mess with it before the real position is set */
-        this->top_x = get_absolute_position(0, *top);
+        this->top_pos = get_absolute_position(0, *top);
     }
 
-    set_top_x(top_x);
+    set_top_pos(top_pos);
 }
 
-void WayfireWindowListBox::set_top_x(int x)
+void WayfireWindowListBox::set_top_pos(int pos)
 {
     /* Make sure that the widget doesn't go outside of the box */
     if (this->top_widget)
     {
-        x = std::min(x, get_allocated_width() - top_widget->get_allocated_width());
+	    if (widget_utils::is_panel_vertical()){
+	        pos = std::min(pos, get_allocated_height() - top_widget->get_allocated_height());
+	    }
+        else{
+	        pos = std::min(pos, get_allocated_width() - top_widget->get_allocated_width());
+        }
     }
 
     if (this->top_widget)
     {
-        x = std::max(x, 0);
+        pos = std::max(pos, 0);
     }
 
-    this->top_x = x;
+    this->top_pos = pos;
 
     queue_allocate();
     queue_draw();
@@ -90,7 +97,12 @@ void WayfireWindowListBox::on_size_allocate(Gtk::Allocation& alloc)
     if (top_widget)
     {
         auto alloc = top_widget->get_allocation();
-        alloc.set_x(this->top_x);
+        if (widget_utils::is_panel_vertical()){
+	        alloc.set_y(this->top_pos);
+        }
+        else{
+	        alloc.set_x(this->top_pos);
+        }
         top_widget->size_allocate(alloc);
     }
 }
@@ -196,7 +208,10 @@ void WayfireWindowList::init(Gtk::HBox *container)
 
     box.set_homogeneous(true);
     scrolled_window.add(box);
+
     scrolled_window.set_propagate_natural_width(true);
+    scrolled_window.set_propagate_natural_height(true);
+
     scrolled_window.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_NEVER);
     container->pack_start(scrolled_window, true, true);
 
@@ -210,13 +225,9 @@ void WayfireWindowList::handle_config_reload(){
 }
 
 void WayfireWindowList::update_layout(){
-    std::string panel_position = WfOption<std::string> {"panel/position"};
-    if (panel_position == PANEL_POSITION_TOP or panel_position == PANEL_POSITION_BOTTOM){
-	    box.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
-    }
-    else if (panel_position == PANEL_POSITION_LEFT or panel_position == PANEL_POSITION_RIGHT){
-	    box.set_orientation(Gtk::ORIENTATION_VERTICAL);
-    }
+    bool vertical = widget_utils::is_panel_vertical();
+    box.set_orientation((vertical) ? Gtk::ORIENTATION_HORIZONTAL: Gtk::ORIENTATION_VERTICAL);
+
 	for (const auto& entry : toplevels){
 		WayfireToplevel* toplevel = entry.second.get();
 		if (toplevel){
@@ -225,52 +236,74 @@ void WayfireWindowList::update_layout(){
 	}
 }
 
-void WayfireWindowList::set_button_width(int width)
+void WayfireWindowList::set_button_size(int size)
 {
-    std::cout << "set width " << width << std::endl;
+    std::cout << "set size" << size << std::endl;
     for (auto& toplevel : toplevels)
     {
         if (toplevel.second)
         {
-            toplevel.second->set_width(width);
+            toplevel.second->set_size(size);
         }
     }
 }
 
-int WayfireWindowList::get_default_button_width()
+int WayfireWindowList::get_default_button_size()
 {
-    return DEFAULT_SIZE_PC *
-           WayfirePanelApp::get().panel_for_wl_output(output->wo)->get_window()
-               .get_allocated_width();
+	if (widget_utils::is_panel_vertical()){
+	    return DEFAULT_SIZE_PC *
+	           WayfirePanelApp::get().panel_for_wl_output(output->wo)->get_window()
+	               .get_allocated_height();
+	}
+	else{
+	    return DEFAULT_SIZE_PC *
+	           WayfirePanelApp::get().panel_for_wl_output(output->wo)->get_window()
+	               .get_allocated_width();
+	}
 }
 
-int WayfireWindowList::get_target_button_width()
+int WayfireWindowList::get_target_button_size()
 {
     int num_children = box.get_children().size();
-    int target_width = get_default_button_width();
+    int target_size = get_default_button_size();
 
     if (num_children > 0)
     {
-        target_width = std::min(target_width,
-            scrolled_window.get_allocated_width() / num_children);
-        std::cout << "target button " << scrolled_window.get_allocated_width() << std::endl;
+	    if (widget_utils::is_panel_vertical()){
+	        target_size = std::min(target_size,
+	            scrolled_window.get_allocated_height() / num_children);
+	        std::cout << "target button " << scrolled_window.get_allocated_height() << std::endl;
+	    }
+	    else{
+	        target_size = std::min(target_size,
+	            scrolled_window.get_allocated_width() / num_children);
+	        std::cout << "target button " << scrolled_window.get_allocated_width() << std::endl;
+	    }
     }
 
-    return target_width;
+    return target_size;
 }
 
 void WayfireWindowList::on_draw(const Cairo::RefPtr<Cairo::Context>& ctx)
 {
-    int allocated_width = scrolled_window.get_allocated_width();
+    int allocated_size;
 
-    int minimal_width, preferred_width;
-    scrolled_window.get_preferred_width(minimal_width, preferred_width);
+    int minimal_size, preferred_size;
+
+    if (widget_utils::is_panel_vertical()){
+	    allocated_size = scrolled_window.get_allocated_height();
+	    scrolled_window.get_preferred_height(minimal_size, preferred_size);
+    }
+    else{
+	    allocated_size = scrolled_window.get_allocated_width();
+	    scrolled_window.get_preferred_width(minimal_size, preferred_size);
+    }
 
     /* We have changed the size/number of toplevels. On top of that, our list
      * is longer that the max size, so we need to re-layout the buttons */
-    if ((preferred_width > allocated_width) && (toplevels.size() > 0))
+    if ((preferred_size > allocated_size) && (toplevels.size() > 0))
     {
-        set_button_width(get_target_button_width());
+        set_button_size(get_target_button_size());
     }
 }
 
@@ -288,7 +321,7 @@ void WayfireWindowList::handle_new_toplevel(zwlr_foreign_toplevel_handle_v1 *han
 {
     toplevels[handle] = std::unique_ptr<WayfireToplevel>(new WayfireToplevel(this, handle));
     /* The size will be updated in the next on_draw() if needed */
-    toplevels[handle]->set_width(get_default_button_width());
+    toplevels[handle]->set_size(get_default_button_size());
 }
 
 void WayfireWindowList::handle_toplevel_closed(zwlr_foreign_toplevel_handle_v1 *handle)
@@ -302,7 +335,7 @@ void WayfireWindowList::handle_toplevel_closed(zwlr_foreign_toplevel_handle_v1 *
     }
 
     /* Recalculate button size */
-    set_button_width(get_target_button_width());
+    set_button_size(get_target_button_size());
 }
 
 WayfireWindowList::WayfireWindowList(WayfireOutput *output)
