@@ -9,6 +9,7 @@ this fork is for development of (hopefully) additions to wf-shell. Current chang
 - added src/panel/widget-utils for stuff that as usefull for widget stuff, including outside of descendants of wayfireWidget, most notably WayfireToplevel.
 
 Current (new) problems are :
+- getting the panel orientation to the widgets is quite horrible, would probably be better to get it directly from the panel ?
 - not all panel widgets respond correctly to being put on the left or right (vertical panel) :
   - window-list looks and works quite bad horizontaly. i’d like some help on that, though you’d probably be better off starting over from the original version. as of f94f092cb5631f145b0db0d9b6f501aed4d9458e :
     - it’s inconsistent
