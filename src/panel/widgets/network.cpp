@@ -423,9 +423,7 @@ void WayfireNetworkInfo::init(Gtk::HBox *container)
 }
 
 void WayfireNetworkInfo::update_layout(){
-       std::string panel_position = WfOption<std::string> {"panel/position"};
-
-       if (panel_position == PANEL_POSITION_LEFT or panel_position == PANEL_POSITION_RIGHT){
+       if (widget_utils::is_panel_vertical()){
 	           status.set_angle(90);
                button_content.set_orientation(Gtk::ORIENTATION_VERTICAL);
        }

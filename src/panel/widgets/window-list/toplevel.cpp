@@ -127,9 +127,7 @@ class WayfireToplevel::impl
     }
 
 	void update_layout(){
-		std::string panel_position = WfOption<std::string> {"panel/position"};
-
-		if (panel_position == PANEL_POSITION_LEFT or panel_position == PANEL_POSITION_RIGHT){
+		if (widget_utils::is_panel_vertical()){
 			label.set_angle(90);
 			button_contents.set_orientation(Gtk::ORIENTATION_VERTICAL);
 		}

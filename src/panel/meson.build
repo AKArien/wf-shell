@@ -15,7 +15,8 @@ widget_sources = ['widgets/battery.cpp',
                   'widgets/tray/watcher.cpp',
                   'widgets/tray/tray.cpp',
                   'widgets/tray/item.cpp',
-                  'widgets/tray/host.cpp']
+                  'widgets/tray/host.cpp',
+                  'widget-utils.cpp']
 
 deps = [gtkmm, wayland_client, libutil, wf_protos, wfconfig, gtklayershell, dbusmenu_gtk]
 

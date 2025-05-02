@@ -222,9 +222,7 @@ bool WayfireBatteryInfo::setup_dbus()
 }
 
 void WayfireBatteryInfo::update_layout(){
-       std::string panel_position = WfOption<std::string> {"panel/position"};
-
-       if (panel_position == PANEL_POSITION_LEFT or panel_position == PANEL_POSITION_RIGHT){
+       if (widget_utils::is_panel_vertical()){
                button_box.set_orientation(Gtk::ORIENTATION_VERTICAL);
        }
        else {
