@@ -11,15 +11,13 @@ this fork is for development of (hopefully) additions to wf-shell. Current chang
 Current (new) problems are :
 - getting the panel orientation to the widgets is quite horrible, would probably be better to get it directly from the panel ?
 - not all panel widgets respond correctly to being put on the left or right (vertical panel) :
-  - window-list looks and works quite bad horizontaly. i’d like some help on that, though you’d probably be better off starting over from the original version. as of f94f092cb5631f145b0db0d9b6f501aed4d9458e :
-    - it’s inconsistent
-    - looks terrible
-    - drag and drop is broken. on an horizontal bar, it has no animation, and it just jumps it down to the bottom on a vertical bar.
-  - command-output, as i am not entirely sure how to adapt it, and…
-  - … it would probably be nice to have a setting to change how text is adapted for a vertical panel. currently, it is rotated 90 degrees to the left, but it should probalby support other orientations, wether the user wants it to stay horizontal (probably effectively exclusively in the case of autohide being on, because text takes a surprising lot of space), or it be rotated the other way.
-- there’s probably some cleaning up to do in the code ! changes were quite hacked on.
+  - there is no vertical layout for window-list and network widgets
+    - since they involve text, i plan on having text direction configurable independently from the panel position, which shouldn’t be all that hard, hopefully maybe
+- there’s probably some cleaning up to do in the code ! changes were quite hacked on so far.
 
-
+features i want to add :
+- all the stuff that i’ve added to the config metadata files but not implemented
+- multiple layers of widgets on wf-panel
 
 # wf-shell
 
