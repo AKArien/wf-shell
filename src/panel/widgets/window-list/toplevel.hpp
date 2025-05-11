@@ -27,13 +27,10 @@ class WayfireToplevel
     WayfireToplevel(WayfireWindowList *window_list, zwlr_foreign_toplevel_handle_v1 *handle);
 
     uint32_t get_state();
-    void set_size(int pixels);
     zwlr_foreign_toplevel_handle_v1 *get_parent();
     void set_parent(zwlr_foreign_toplevel_handle_v1*);
     std::vector<zwlr_foreign_toplevel_handle_v1*>& get_children();
     ~WayfireToplevel();
-
-    void handle_config_reload();
 
     class impl;
 

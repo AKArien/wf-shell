@@ -6,34 +6,34 @@ WayfireMenuButton::WayfireMenuButton(const std::string& section) :
     panel_position{section + "/position"}
 {
     get_style_context()->add_class("flat");
-    m_popover.set_constrain_to(Gtk::POPOVER_CONSTRAINT_NONE);
+    // m_popover.set_constrain_to(Gtk::POPOVER_CONSTRAINT_NONE);
 
     auto cb = [=] ()
     {
- 	    if ((std::string)panel_position == "top"){
- 	    	set_direction(Gtk::ARROW_DOWN);
- 	    }
+ 	    // if ((std::string)panel_position == "top"){
+ 	    // 	set_direction(Gtk::ARROW_DOWN);
+ 	    // }
  
- 	    else if ((std::string)panel_position == "bottom"){
- 	    	set_direction(Gtk::ARROW_UP);
- 	    }
+ 	    // else if ((std::string)panel_position == "bottom"){
+ 	    // 	set_direction(Gtk::ARROW_UP);
+ 	    // }
  
- 	    else if ((std::string)panel_position == "left"){
- 	    	set_direction(Gtk::ARROW_RIGHT);
- 	    }
+ 	    // else if ((std::string)panel_position == "left"){
+ 	    // 	set_direction(Gtk::ARROW_RIGHT);
+ 	    // }
  
- 	    else if ((std::string)panel_position == "right"){
- 	    	set_direction(Gtk::ARROW_LEFT);
- 	    }
+ 	    // else if ((std::string)panel_position == "right"){
+ 	    // 	set_direction(Gtk::ARROW_LEFT);
+ 	    // }
 
         this->unset_popover();
-        m_popover.set_constrain_to(Gtk::POPOVER_CONSTRAINT_NONE);
+        // m_popover.set_constrain_to(Gtk::POPOVER_CONSTRAINT_NONE);
         set_popover(m_popover);
     };
     panel_position.set_callback(cb);
     cb();
 
-    m_popover.signal_show().connect_notify([=]
+    m_popover.signal_show().connect([=]
     {
         set_active_on_window();
     });

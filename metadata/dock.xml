@@ -52,6 +52,31 @@
 			<_name>Right</_name>
 		</desc>
 	</option>
+	<option name="direction" type="string">
+		<_short>Dock direction</_short>
+		<default>match</default>
+		<desc>
+			<value>match</value>
+			<_name>Match dock position</_name>
+		</desc>
+		<desc>
+			<value>left_to_right</value>
+			<_name>Horizontal (left to right)</_name>
+		</desc>
+		<desc>
+			<value>down_to_up</value>
+			<_name>Left (down to up)</_name>
+		</desc>
+		<desc>
+			<value>up_to_down</value>
+			<_name>Right (up to down)</_name>
+		</desc>
+	</option>
+	<option name="max_per_line" type="int">
+		<_short>Max icons per line</_short>
+		<_long>If greater than 0, the dock will have a maximum number of entries per line, after which a new line is created.</_long>
+		<default>0</default>
+	</option>
 	<option name="dock_height" type="int">
 		<_short>Dock height</_short>
 		<default>100</default>
@@ -64,6 +89,11 @@
 		<_short>Edge offset</_short>
 		<_long>The distance from the cursor to the edge of screen to show the panel when it's hidden.</_long>
 		<default>20</default>
+	</option>
+	<option name="show_close" type="bool">
+	    <_short>Show Close Animations</_short>
+		<_long>Keep all window icons for up to 2 seconds to allow CSS animations.</_long>
+		<default>true</default>
 	</option>
 	</plugin>
 </wf-shell>

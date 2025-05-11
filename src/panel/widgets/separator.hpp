@@ -2,6 +2,7 @@
 #define WIDGET_SEPARATOR_HPP
 
 #include "../widget.hpp"
+#include "../widget-utils.hpp"
 #include <gtkmm/separator.h>
 
 class WayfireSeparator : public WayfireWidget
@@ -11,7 +12,7 @@ class WayfireSeparator : public WayfireWidget
   public:
     WayfireSeparator(int pixels);
 
-    virtual void init(Gtk::HBox *container);
+    virtual void init(Gtk::Box *container);
     void update_layout();
     void handle_config_reload();
     virtual ~WayfireSeparator()

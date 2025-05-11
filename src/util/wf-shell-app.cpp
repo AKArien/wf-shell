@@ -1,11 +1,14 @@
 #include "wf-shell-app.hpp"
 #include <glibmm/main.h>
 #include <sys/inotify.h>
-#include <gdk/gdkwayland.h>
+#include <gdk/wayland/gdkwayland.h>
+#include <gio/gio.h>
 #include <iostream>
 #include <filesystem>
 #include <memory>
 #include <wayfire/config/file.hpp>
+#include <wf-option-wrap.hpp>
+#include <gtk-utils.hpp>
 
 #include <unistd.h>
 
@@ -62,6 +65,60 @@ std::string WayfireShellApp::get_css_config_dir()
     }
 
     return css_directory;
+}
+
+void WayfireShellApp::on_css_reload()
+{
+    clear_css_rules();
+    /* Add user directory */
+    std::string ext(".css");
+    for (auto & p : std::filesystem::directory_iterator(get_css_config_dir()))
+    {
+        if (p.path().extension() == ext)
+        {
+            int priority = GTK_STYLE_PROVIDER_PRIORITY_USER;
+            if (p.path().filename() == "default.css")
+            {
+                priority = GTK_STYLE_PROVIDER_PRIORITY_APPLICATION;
+            }
+
+            add_css_file(p.path().string(), priority);
+        }
+    }
+
+    /* Add one user file */
+    auto custom_css_config = WfOption<std::string>{"panel/css_path"};
+    std::string custom_css = custom_css_config;
+    if (custom_css != "")
+    {
+        add_css_file(custom_css, GTK_STYLE_PROVIDER_PRIORITY_USER);
+    }
+}
+
+void WayfireShellApp::clear_css_rules()
+{
+    auto display = Gdk::Display::get_default();
+    for (auto css_provider : css_rules)
+    {
+        Gtk::StyleContext::remove_provider_for_display(display, css_provider);
+    }
+
+    css_rules.clear();
+}
+
+void WayfireShellApp::add_css_file(std::string file, int priority)
+{
+    auto display = Gdk::Display::get_default();
+    if (file != "")
+    {
+        auto css_provider = load_css_from_path(file);
+        if (css_provider)
+        {
+            Gtk::StyleContext::add_provider_for_display(
+                display, css_provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
+            css_rules.push_back(css_provider);
+        }
+    }
 }
 
 bool WayfireShellApp::parse_cfgfile(const Glib::ustring & option_name,
@@ -172,28 +229,44 @@ void WayfireShellApp::on_activate()
 
     Glib::signal_io().connect(
         sigc::bind<0>(&handle_inotify_event, this),
-        inotify_fd, Glib::IO_IN | Glib::IO_HUP);
+        inotify_fd, Glib::IOCondition::IO_IN | Glib::IOCondition::IO_HUP);
     Glib::signal_io().connect(
         sigc::bind<0>(&handle_css_inotify_event, this),
-        inotify_css_fd, Glib::IO_IN | Glib::IO_HUP);
+        inotify_css_fd, Glib::IOCondition::IO_IN | Glib::IOCondition::IO_HUP);
 
     // Hook up monitor tracking
-    auto display = Gdk::Display::get_default();
-    display->signal_monitor_added().connect_notify(
-        [=] (const GMonitor& monitor) { this->add_output(monitor); });
-    display->signal_monitor_removed().connect_notify(
-        [=] (const GMonitor& monitor) { this->rem_output(monitor); });
+    auto display  = Gdk::Display::get_default();
+    auto monitors = display->get_monitors();
+    monitors->signal_items_changed().connect(sigc::mem_fun(*this, &WayfireShellApp::output_list_updated));
 
     // initial monitors
-    int num_monitors = display->get_n_monitors();
+    int num_monitors = monitors->get_n_items();
     for (int i = 0; i < num_monitors; i++)
     {
-        add_output(display->get_monitor(i));
+        auto obj = std::dynamic_pointer_cast<Gdk::Monitor>(monitors->get_object(i));
+        add_output(obj);
+    }
+}
+
+void WayfireShellApp::output_list_updated(const int pos, const int rem, const int add)
+{
+    auto display  = Gdk::Display::get_default();
+    auto monitors = display->get_monitors();
+    for (int i = 0; i < add; i++)
+    {
+        auto obj = std::dynamic_pointer_cast<Gdk::Monitor>(monitors->get_object(i + pos));
+        add_output(obj);
     }
 }
 
 void WayfireShellApp::add_output(GMonitor monitor)
 {
+    // Remove self when unplugged
+    monitor->signal_invalidate().connect([=]
+    {
+        rem_output(monitor);
+    });
+    // Add to list
     monitors.push_back(
         std::make_unique<WayfireOutput>(monitor, this->wf_shell_manager));
     handle_new_output(monitors.back().get());
@@ -213,15 +286,14 @@ void WayfireShellApp::rem_output(GMonitor monitor)
 
 WayfireShellApp::WayfireShellApp(int argc, char **argv)
 {
-    app = Gtk::Application::create(argc, argv, "",
-        Gio::APPLICATION_HANDLES_COMMAND_LINE);
-    app->signal_activate().connect_notify(
-        sigc::mem_fun(this, &WayfireShellApp::on_activate));
+    app = Gtk::Application::create("", Gio::Application::Flags::HANDLES_COMMAND_LINE);
+    app->signal_activate().connect(
+        sigc::mem_fun(*this, &WayfireShellApp::on_activate));
     app->add_main_option_entry(
-        sigc::mem_fun(this, &WayfireShellApp::parse_cfgfile),
+        sigc::mem_fun(*this, &WayfireShellApp::parse_cfgfile),
         "config", 'c', "config file to use", "file");
     app->add_main_option_entry(
-        sigc::mem_fun(this, &WayfireShellApp::parse_cssfile),
+        sigc::mem_fun(*this, &WayfireShellApp::parse_cssfile),
         "css", 's', "css style directory to use", "directory");
 
     // Activate app after parsing command line

@@ -93,6 +93,26 @@
 			<_name>Right</_name>
 		</desc>
 	</option>
+	<option name="direction" type="string">
+		<_short>Panel direction</_short>
+		<default>match</default>
+		<desc>
+			<value>match</value>
+			<_name>Match panel position</_name>
+		</desc>
+		<desc>
+			<value>left_to_right</value>
+			<_name>Horizontal (left to right)</_name>
+		</desc>
+		<desc>
+			<value>down_to_up</value>
+			<_name>Left (down to up)</_name>
+		</desc>
+		<desc>
+			<value>up_to_down</value>
+			<_name>Right (up to down)</_name>
+		</desc>
+	</option>
 	<option name="edge_offset" type="int">
 		<_short>Edge offset</_short>
 		<_long>The distance from the cursor to the edge of screen to show the panel when it's hidden.</_long>

@@ -1,8 +1,9 @@
 #include "dock.hpp"
 #include "toplevel.hpp"
 #include "toplevel-icon.hpp"
+#include "glibmm.h"
 #include <iostream>
-#include <gdk/gdkwayland.h>
+#include <gdk/wayland/gdkwayland.h>
 
 
 namespace
@@ -120,7 +121,19 @@ void WfDockApp::handle_new_toplevel(zwlr_foreign_toplevel_handle_v1 *handle)
 
 void WfDockApp::handle_toplevel_closed(zwlr_foreign_toplevel_handle_v1 *handle)
 {
-    priv->toplevels.erase(handle);
+    priv->toplevels[handle]->close();
+    WfOption<bool> use_close_animations{"dock/show_close"};
+    if (use_close_animations)
+    {
+        Glib::signal_timeout().connect([=]
+        {
+            priv->toplevels.erase(handle);
+            return false;
+        }, 2000);
+    } else
+    {
+        priv->toplevels.erase(handle);
+    }
 }
 
 WfDockApp& WfDockApp::get()

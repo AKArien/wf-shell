@@ -7,20 +7,19 @@ WayfireSeparator::WayfireSeparator(int pixels)
     separator.set_margin_end(half);
 }
 
-void WayfireSeparator::init(Gtk::HBox *container)
+void WayfireSeparator::init(Gtk::Box *container)
 {
     separator.get_style_context()->add_class("separator");
-    container->pack_start(separator);
+    container->append(separator);
     update_layout();
-    separator.show_all();
 }
 
 void WayfireSeparator::update_layout(){
        if (widget_utils::is_panel_vertical()){
-               separator.set_orientation(Gtk::ORIENTATION_VERTICAL);
+               separator.set_orientation(Gtk::Orientation::VERTICAL);
        }
        else {
-               separator.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
+               separator.set_orientation(Gtk::Orientation::HORIZONTAL);
        }
 }
 
