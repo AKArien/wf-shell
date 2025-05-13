@@ -433,11 +433,11 @@ void WayfireNetworkInfo::init(Gtk::Box *container)
 }
 
 void WayfireNetworkInfo::update_layout(){
-	if (widget_utils::is_panel_vertical()){
-		button_content.set_orientation(Gtk::Orientation::VERTICAL);
+	if (config::is_horizontal){
+		button_content.set_orientation(Gtk::Orientation::HORIZONTAL);
 	}
 	else {
-		button_content.set_orientation(Gtk::Orientation::HORIZONTAL);
+		button_content.set_orientation(Gtk::Orientation::VERTICAL);
 	}
 }
 

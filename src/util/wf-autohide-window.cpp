@@ -181,12 +181,13 @@ void WayfireAutohidingWindow::update_position()
     /* When the position changes, show an animation from the new edge. */
     if (anchor == GTK_LAYER_SHELL_EDGE_LEFT or anchor == GTK_LAYER_SHELL_EDGE_LEFT)
     {
-        autohide_animation.animate(-this->get_allocated_width(), 0);
+        autohide_animation_size = -this->get_allocated_width();
     }
     else
     {
-        autohide_animation.animate(-this->get_allocated_height(), 0);
+        autohide_animation_size = -this->get_allocated_height();
     }
+    autohide_animation.animate(autohide_animation_size, 0);
     start_draw_timer();
     m_show_uncertain();
     setup_hotspot();
@@ -380,15 +381,7 @@ bool WayfireAutohidingWindow::should_autohide() const
 
 bool WayfireAutohidingWindow::m_do_hide()
 {
-	std::string direction = check_position((std::string)position);
-    if (direction == WF_WINDOW_POSITION_LEFT or direction == WF_WINDOW_POSITION_RIGHT)
-    {
-        autohide_animation.animate(-get_allocated_width());
-    }
-    else
-    {
-        autohide_animation.animate(-get_allocated_height());
-    }
+    autohide_animation.animate(-autohide_animation_size);
     start_draw_timer();
     update_margin();
     return false; // disconnect

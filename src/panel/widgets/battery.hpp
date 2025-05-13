@@ -10,7 +10,6 @@
 #include <giomm/dbusconnection.h>
 
 #include "../widget.hpp"
-#include "../widget-utils.hpp"
 
 using DBusConnection = Glib::RefPtr<Gio::DBus::Connection>;
 using DBusProxy = Glib::RefPtr<Gio::DBus::Proxy>;

@@ -15,11 +15,11 @@ void WayfireSeparator::init(Gtk::Box *container)
 }
 
 void WayfireSeparator::update_layout(){
-       if (widget_utils::is_panel_vertical()){
-               separator.set_orientation(Gtk::Orientation::VERTICAL);
+       if (config::is_horizontal){
+               separator.set_orientation(Gtk::Orientation::HORIZONTAL);
        }
        else {
-               separator.set_orientation(Gtk::Orientation::HORIZONTAL);
+               separator.set_orientation(Gtk::Orientation::VERTICAL);
        }
 }
 

@@ -18,7 +18,6 @@ widget_sources = [
   'widgets/tray/item.cpp',
   'widgets/tray/host.cpp',
   'widgets/tray/dbusmenu.cpp',
-  'widget-utils.cpp',
 ]
 
 deps = [

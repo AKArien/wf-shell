@@ -207,11 +207,11 @@ bool WayfireBatteryInfo::setup_dbus()
 }
 
 void WayfireBatteryInfo::update_layout(){
-       if (widget_utils::is_panel_vertical()){
-               button_box.set_orientation(Gtk::Orientation::VERTICAL);
+       if (config::is_horizontal){
+               button_box.set_orientation(Gtk::Orientation::HORIZONTAL);
        }
        else {
-               button_box.set_orientation(Gtk::Orientation::HORIZONTAL);
+               button_box.set_orientation(Gtk::Orientation::VERTICAL);
        }
 }
 

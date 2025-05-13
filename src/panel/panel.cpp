@@ -17,6 +17,7 @@
 #include "panel.hpp"
 #include "../util/gtk-utils.hpp"
 
+#include "widget.hpp"
 #include "widgets/battery.hpp"
 #include "widgets/command-output.hpp"
 #include "widgets/menu.hpp"
@@ -88,6 +89,8 @@ class WayfirePanel::impl
 
 	void update_orientation(){
 		bool is_horizontal = !((std::string)panel_position == "left" or (std::string)panel_position == "right"); // not the most pretty, but if the value is top, down or something invalid, it works the same
+		WayfireWidget::config::panel_position = panel_position;
+		WayfireWidget::config::is_horizontal = is_horizontal;
 
  		if (is_horizontal){
 	 		// if the panel is supposed to expand trough the whole edge, set anchors to stretch it

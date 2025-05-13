@@ -23,6 +23,11 @@ class WayfireWidget
     std::string widget_name; // for WayfirePanel use, widgets shouldn't change it
 
     virtual void init(Gtk::Box *container) = 0;
+
+    struct config{
+      inline static std::string panel_position = "top";
+      inline static bool is_horizontal = true; // with how many times it would be computed have a shorthand for it. not even sure there’s a difference after optimisitions tbh
+    };
     virtual void handle_config_reload()
     {}
     virtual ~WayfireWidget()

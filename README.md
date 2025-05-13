@@ -6,10 +6,9 @@ this fork is for development of (hopefully) additions to wf-shell. Current chang
 - clarified `autohide_delay` description (a more suitable name would probably be autohide_time ?)
 - the panel can be made to not span the whole side (like the gnome dock, or the similar kde option)
 - the panel and dock can be attached to the left or right of the screen
-- added src/panel/widget-utils for stuff that as usefull for widget stuff, including outside of descendants of wayfireWidget, most notably WayfireToplevel.
+- added structure config in WayfireWidget, containing static members for getting global widget configuration (probably mostly for orientation)
 
 Current (new) problems are :
-- getting the panel orientation to the widgets is quite horrible, would probably be better to get it directly from the panel ?
 - not all panel widgets respond correctly to being put on the left or right (vertical panel) :
   - there is no vertical layout for window-list and network widgets
     - since they involve text, i plan on having text direction configurable independently from the panel position, which shouldn’t be all that hard, hopefully maybe

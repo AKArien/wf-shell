@@ -2,7 +2,6 @@
 #define WIDGET_SEPARATOR_HPP
 
 #include "../widget.hpp"
-#include "../widget-utils.hpp"
 #include <gtkmm/separator.h>
 
 class WayfireSeparator : public WayfireWidget

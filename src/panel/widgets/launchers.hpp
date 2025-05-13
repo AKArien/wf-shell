@@ -2,7 +2,6 @@
 #define LAUNCHERS_HPP
 
 #include "../widget.hpp"
-#include "../widget-utils.hpp"
 #include <vector>
 #include <giomm/desktopappinfo.h>
 #include <gtkmm/image.h>
