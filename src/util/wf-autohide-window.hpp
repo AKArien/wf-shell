@@ -88,7 +88,7 @@ class WayfireAutohidingWindow : public Gtk::Window
     void update_position();
 
     wf::animation::simple_animation_t autohide_animation;
-    int autohide_animation_size;
+    int (Gtk::Widget::*get_allocated_height_or_width)() const;
     bool update_margin();
 
     WfOption<int> edge_offset;
