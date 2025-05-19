@@ -81,6 +81,11 @@
 		<_short>Dock height</_short>
 		<default>100</default>
 	</option>
+	<option name="dock_width" type="int">
+		<_short>Dock width</_short>
+		<default>100</default>
+	</option>
+
 	<option name="icon_height" type="int">
 		<_short>Dock icons height</_short>
 		<default>72</default>
