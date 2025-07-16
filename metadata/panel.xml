@@ -93,24 +93,28 @@
 			<_name>Right</_name>
 		</desc>
 	</option>
-	<option name="direction" type="string">
-		<_short>Panel direction</_short>
+	<option name="orientation" type="string">
+		<_short>Elements orientation</_short>
 		<default>match</default>
 		<desc>
 			<value>match</value>
 			<_name>Match panel position</_name>
 		</desc>
 		<desc>
-			<value>left_to_right</value>
-			<_name>Horizontal (left to right)</_name>
+			<value>horizontal</value>
+			<_name>Normal</_name>
 		</desc>
 		<desc>
-			<value>down_to_up</value>
-			<_name>Left (down to up)</_name>
+			<value>left</value>
+			<_name>Orient components to the left</_name>
 		</desc>
 		<desc>
-			<value>up_to_down</value>
-			<_name>Right (up to down)</_name>
+			<value>right</value>
+			<_name>Orient components to the right</_name>
+		</desc>
+		<desc>
+			<value>custom</value>
+			<_name>Custom css rules</_name>
 		</desc>
 	</option>
 	<option name="edge_offset" type="int">
