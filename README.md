@@ -17,6 +17,7 @@ Current (new) problems are :
 features i want to add :
 - all the stuff that i’ve added to the config metadata files but not implemented
 - multiple layers of widgets on wf-panel
+- new widgets ! one to control display brightness and an advanced pipewire audio control
 
 # wf-shell
 
