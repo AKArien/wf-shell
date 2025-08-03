@@ -26,10 +26,13 @@ class WfDock::impl
     // listbox neither, since it can’t even be oriented
 
     WfOption<std::string> css_path{"dock/css_path"};
+    WfOption<int> dock_width{"dock/dock_width"};
     WfOption<int> dock_height{"dock/dock_height"};
 
 	WfOption<std::string> position{"dock/position"};
 	WfOption<int> entries_per_line{"dock/max_per_line"};
+
+	WfOption<std::string> orientation{"dock/orientation"};
 
 	void (Gtk::Box::*ap_or_pre_pend)(Gtk::Widget&); // pointer to Gtk::Box::prepend or Gtk::Box::append, updated by update_layout
 	Gtk::Widget* (Gtk::Widget::*first_or_last_child)(); // same, for get_first_child and get_last_child
@@ -51,7 +54,7 @@ class WfDock::impl
 		gtk_layer_set_margin(window->gobj(), GTK_LAYER_SHELL_EDGE_RIGHT, 0);
 
         window->set_child(out_box);
-        window->set_default_size(1, 1); // take the least space possible
+        window->set_default_size(dock_width, dock_height);
         update_layout();
 
         window->get_style_context()->add_class("wf-dock");
@@ -67,6 +70,21 @@ class WfDock::impl
                 Gtk::StyleContext::add_provider_for_display(display, css, GTK_STYLE_PROVIDER_PRIORITY_USER);
             }
         }
+
+		// this is temporary for testing purposes, should be placed somewhere else that can be seen by all the stuff that needs to have it
+        auto orientation_css = R"(
+			.left {
+				transform: rotate(270deg);
+			}
+			.right {
+				transform: rotate(90deg);
+			}
+
+		)";
+		auto orientation_provider = Gtk::CssProvider::create();
+		orientation_provider->load_from_data(orientation_css);
+        Gtk::StyleContext::add_provider_for_display(Gdk::Display::get_default(), orientation_provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
+
 
         window->present();
         new CssFromConfigInt("dock/icon_height", ".toplevel-icon {-gtk-icon-size:", "px;}");
@@ -91,6 +109,28 @@ class WfDock::impl
             return true;
         });
     }
+
+	void apply_orientation(Gtk::Widget& widget){
+		if (widget.get_style_context()->has_class("custom")){
+			widget.get_style_context()->remove_class("custom");
+		}
+		else if (widget.get_style_context()->has_class("left")){
+			widget.get_style_context()->remove_class("left");
+		}
+		else if (widget.get_style_context()->has_class("right")){
+			widget.get_style_context()->remove_class("right");
+		}
+
+		if ((std::string)orientation == "custom"){
+			widget.get_style_context()->add_class("custom-orientation");
+		}
+		else if ((std::string)orientation == "left" || ((std::string)orientation == "match" && (std::string)position == "right")){
+			widget.get_style_context()->add_class("left");
+		}
+		else if ((std::string)orientation == "right" || ((std::string)orientation == "match" && (std::string)position == "left")){
+			widget.get_style_context()->add_class("right");
+		}
+	}
 
 	void update_layout(){
 
@@ -117,6 +157,10 @@ class WfDock::impl
 
 		for (auto layer : out_box.get_children()){
 			((Gtk::Box*)layer)->set_orientation(orientation);
+
+			for (auto child : layer->get_children()){
+				apply_orientation(*child);
+			}
 		}
     }
 
@@ -132,6 +176,7 @@ class WfDock::impl
 
 		widget.set_halign(Gtk::Align::CENTER);
 		widget.set_valign(Gtk::Align::CENTER);
+		widget.get_style_context()->add_class("re-orient");
 
  	    last_child.append(widget);
     }

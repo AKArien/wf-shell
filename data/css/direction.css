@@ -1,0 +1,5 @@
+.re-orient{ /* for widgets that change their orientation depending on panel/dock position or have an overriden orientation /*
+	transform: rotate(270deg);
+	/* transform: rotate(90deg);*/ /* or, if you prefer */
+}
+
