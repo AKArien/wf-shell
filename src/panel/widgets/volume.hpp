@@ -3,7 +3,7 @@
 
 #include "../widget.hpp"
 #include <gtkmm/image.h>
-#include "shared/animated_scale.hpp"
+#include "../../util/animated_scale.hpp"
 #include <pulse/pulseaudio.h>
 #include "gvc-mixer-control.h"
 

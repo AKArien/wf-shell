@@ -1,5 +1,4 @@
 widget_sources = [
-  'widgets/shared/animated_scale.cpp',
   'widgets/battery.cpp',
   'widgets/menu.cpp',
   'widgets/clock.cpp',
