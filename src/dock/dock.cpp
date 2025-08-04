@@ -32,7 +32,7 @@ class WfDock::impl
 	WfOption<std::string> position{"dock/position"};
 	WfOption<int> entries_per_line{"dock/max_per_line"};
 
-	WfOption<std::string> orientation{"dock/orientation"};
+	WfOption<std::string> rotation{"dock/orientation"};
 
 	void (Gtk::Box::*ap_or_pre_pend)(Gtk::Widget&); // pointer to Gtk::Box::prepend or Gtk::Box::append, updated by update_layout
 	Gtk::Widget* (Gtk::Widget::*first_or_last_child)(); // same, for get_first_child and get_last_child
@@ -71,21 +71,6 @@ class WfDock::impl
             }
         }
 
-		// this is temporary for testing purposes, should be placed somewhere else that can be seen by all the stuff that needs to have it
-        auto orientation_css = R"(
-			.left {
-				transform: rotate(270deg);
-			}
-			.right {
-				transform: rotate(90deg);
-			}
-
-		)";
-		auto orientation_provider = Gtk::CssProvider::create();
-		orientation_provider->load_from_data(orientation_css);
-        Gtk::StyleContext::add_provider_for_display(Gdk::Display::get_default(), orientation_provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
-
-
         window->present();
         new CssFromConfigInt("dock/icon_height", ".toplevel-icon {-gtk-icon-size:", "px;}");
         _wl_surface = gdk_wayland_surface_get_wl_surface(
@@ -110,28 +95,6 @@ class WfDock::impl
         });
     }
 
-	void apply_orientation(Gtk::Widget& widget){
-		if (widget.get_style_context()->has_class("custom")){
-			widget.get_style_context()->remove_class("custom");
-		}
-		else if (widget.get_style_context()->has_class("left")){
-			widget.get_style_context()->remove_class("left");
-		}
-		else if (widget.get_style_context()->has_class("right")){
-			widget.get_style_context()->remove_class("right");
-		}
-
-		if ((std::string)orientation == "custom"){
-			widget.get_style_context()->add_class("custom-orientation");
-		}
-		else if ((std::string)orientation == "left" || ((std::string)orientation == "match" && (std::string)position == "right")){
-			widget.get_style_context()->add_class("left");
-		}
-		else if ((std::string)orientation == "right" || ((std::string)orientation == "match" && (std::string)position == "left")){
-			widget.get_style_context()->add_class("right");
-		}
-	}
-
 	void update_layout(){
 
 		Gtk::Orientation orientation;
@@ -155,11 +118,19 @@ class WfDock::impl
 			reverse_iteration = false;
 		}
 
+		std::string widget_rotation = "horizontal";
+		if ((std::string)rotation == ROTATION_LEFT || (std::string)rotation == "match" && (std::string)position == "right"){
+			widget_rotation = ROTATION_LEFT;
+		}
+		else if ((std::string)rotation == ROTATION_RIGHT || (std::string)rotation == "match" && (std::string)position == "left"){
+			widget_rotation = ROTATION_RIGHT;
+		}
+
 		for (auto layer : out_box.get_children()){
 			((Gtk::Box*)layer)->set_orientation(orientation);
 
 			for (auto child : layer->get_children()){
-				apply_orientation(*child);
+				apply_rotation(*child, widget_rotation);
 			}
 		}
     }

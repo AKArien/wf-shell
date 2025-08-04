@@ -112,10 +112,6 @@
 			<value>right</value>
 			<_name>Orient components to the right</_name>
 		</desc>
-		<desc>
-			<value>custom</value>
-			<_name>Custom css rules</_name>
-		</desc>
 	</option>
 	<option name="edge_offset" type="int">
 		<_short>Edge offset</_short>

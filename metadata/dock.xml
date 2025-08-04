@@ -71,10 +71,6 @@
 			<value>right</value>
 			<_name>Orient components to the right</_name>
 		</desc>
-		<desc>
-			<value>custom</value>
-			<_name>Custom css rules</_name>
-		</desc>
 	</option>
 	<option name="max_per_line" type="int">
 		<_short>Max icons per line</_short>

@@ -77,6 +77,7 @@ class WayfirePanel::impl
     WfOption<bool> full_edge{"panel/span_full_edge"};
 
     WfOption<std::string> panel_position{"panel/position"};
+    WfOption<std::string> panel_orientation("panel/orientation"};
 
     void set_boxes_orientation(Gtk::Orientation orientation){
 
@@ -91,6 +92,7 @@ class WayfirePanel::impl
 		bool is_horizontal = !((std::string)panel_position == "left" or (std::string)panel_position == "right"); // not the most pretty, but if the value is top, down or something invalid, it works the same
 		WayfireWidget::config::panel_position = panel_position;
 		WayfireWidget::config::is_horizontal = is_horizontal;
+		WayfireWidget::config::orientation = panel_orientation;
 
  		if (is_horizontal){
 	 		// if the panel is supposed to expand trough the whole edge, set anchors to stretch it
