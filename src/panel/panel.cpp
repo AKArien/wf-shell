@@ -29,6 +29,7 @@
 #ifdef HAVE_PULSE
     #include "widgets/volume.hpp"
 #endif
+#include "widgets/wireplumber.hpp"
 #include "widgets/window-list/window-list.hpp"
 #include "widgets/notifications/notification-center.hpp"
 #include "widgets/tray/tray.hpp"
@@ -98,7 +99,7 @@ class WayfirePanel::impl
 	 		// if the panel is supposed to expand trough the whole edge, set anchors to stretch it
 			gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_LEFT, full_edge);
 			gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_RIGHT, full_edge);
-	 		
+
 	        gtk_layer_set_margin(window->gobj(), GTK_LAYER_SHELL_EDGE_LEFT, 0);
 	        gtk_layer_set_margin(window->gobj(), GTK_LAYER_SHELL_EDGE_RIGHT, 0);
 
@@ -213,6 +214,11 @@ class WayfirePanel::impl
             std::cerr << "Built without pulse support, volume widget "
                          " is not available." << std::endl;
 #endif
+        }
+
+        if (name == "wireplumber")
+        {
+            return Widget(new WayfireWireplumber());
         }
 
         if (name == "window-list")
@@ -369,7 +375,7 @@ class WayfirePanel::impl
     void handle_config_reload()
     {
 		update_orientation();
-	    
+
         for (auto& w : left_widgets)
         {
             w->handle_config_reload();
