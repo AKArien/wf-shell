@@ -4,10 +4,16 @@
 #include "gio/gio.h"
 #include "glib-object.h"
 #include "glib.h"
+#include "gtkmm/enums.h"
+#include "gtkmm/label.h"
+#include "gtkmm/separator.h"
 #include "launchers.hpp"
 #include "gtk-utils.hpp"
 #include "animated_scale.hpp"
-#include "wp/wp.h"
+#include "widget.hpp"
+#include "wp/proxy-interfaces.h"
+
+#include <pipewire/keys.h>
 
 #include "wireplumber.hpp"
 
@@ -80,9 +86,34 @@ void WayfireWireplumber::init(Gtk::Box *container){
     // scroll_gesture->set_flags(Gtk::EventControllerScroll::Flags::VERTICAL);
     // button.add_controller(scroll_gesture);
 
+    // The container of the container of the containers of the scales
+    Gtk::Orientation r1, r2;
+    if (config::is_horizontal){ // todo : make this configurable
+
+        r1 = Gtk::Orientation::HORIZONTAL;
+        r2 = Gtk::Orientation::VERTICAL;
+    }
+    else {
+        r1 = Gtk::Orientation::VERTICAL;
+        r2 = Gtk::Orientation::HORIZONTAL;
+    }
+    Gtk::Box* master_box = new Gtk::Box(r1);
+    master_box->append(sinks_box);
+    master_box->append(sources_box);
+    master_box->append(streams_box);
+    sinks_box.set_orientation(r2);
+    sinks_box.append(*new Gtk::Label("Output devices"));
+    sinks_box.append(*new Gtk::Separator(r2));
+    sources_box.set_orientation(r2);
+    sources_box.append(*new Gtk::Label("Input devices"));
+    sources_box.append(*new Gtk::Separator(r2));
+    streams_box.set_orientation(r2);
+    streams_box.append(*new Gtk::Label("Audio streams"));
+    streams_box.append(*new Gtk::Separator(r2));
+
     /* Setup popover */
     popover.set_autohide(false);
-    popover.set_child(scales_box);
+    popover.set_child(*master_box);
     popover.get_style_context()->add_class("volume-popover");
     // popover.add_controller(scroll_gesture);
 
@@ -95,12 +126,18 @@ void WayfireWireplumber::init(Gtk::Box *container){
 
 void WpCommon::init_wp(WayfireWireplumber& widget){
     // creates the core, object interests and connects signals
+
     // this equates core being set to the status of wireplumber usage
     // it allows re-using the core, object manager, etc through multiple
     // instances of the widget, such as multiple monitors
     if (core != nullptr){
         std::cout << "wp core appears to already be up";
-    	g_signal_connect(WpCommon::object_manager, "object_added", G_CALLBACK(WpCommon::on_object_added), &widget);
+    	g_signal_connect(
+    	    WpCommon::object_manager,
+    	    "object_added",
+    	    G_CALLBACK(WpCommon::on_object_added),
+    	    &widget
+    	);
         return;
     }
     std::cout << "Initialising wireplumber";
@@ -111,19 +148,48 @@ void WpCommon::init_wp(WayfireWireplumber& widget){
 	// sinks, sources and streams
     std::cout << "registering interests";
 	WpObjectInterest* sink_interest = wp_object_interest_new_type(WP_TYPE_NODE);
-	wp_object_interest_add_constraint(sink_interest, WP_CONSTRAINT_TYPE_PW_PROPERTY, "media.class", WP_CONSTRAINT_VERB_EQUALS, g_variant_new_string("Audio/Sink"));
+	wp_object_interest_add_constraint(
+	    sink_interest,
+	    WP_CONSTRAINT_TYPE_PW_PROPERTY,
+	    "media.class",
+	    WP_CONSTRAINT_VERB_EQUALS,
+	    g_variant_new_string("Audio/Sink")
+	);
+
 	wp_object_manager_add_interest_full(object_manager, sink_interest);
 
 	WpObjectInterest* source_interest = wp_object_interest_new_type(WP_TYPE_NODE);
-	wp_object_interest_add_constraint(source_interest, WP_CONSTRAINT_TYPE_PW_PROPERTY, "media.class", WP_CONSTRAINT_VERB_EQUALS, g_variant_new_string("Audio/Source"));
+	wp_object_interest_add_constraint(
+	    source_interest,
+	    WP_CONSTRAINT_TYPE_PW_PROPERTY,
+	    "media.class",
+	    WP_CONSTRAINT_VERB_EQUALS,
+	    g_variant_new_string("Audio/Source")
+	);
+
 	wp_object_manager_add_interest_full(object_manager, source_interest);
 
 	WpObjectInterest* stream_interest = wp_object_interest_new_type(WP_TYPE_NODE);
-	wp_object_interest_add_constraint(stream_interest, WP_CONSTRAINT_TYPE_PW_PROPERTY, "media.class", WP_CONSTRAINT_VERB_EQUALS, g_variant_new_string("Stream/Output/Audio"));
+	wp_object_interest_add_constraint(
+	    stream_interest,
+	    WP_CONSTRAINT_TYPE_PW_PROPERTY,
+	    "media.class",
+	    WP_CONSTRAINT_VERB_EQUALS,
+	    g_variant_new_string("Stream/Output/Audio")
+	);
 	wp_object_manager_add_interest_full(object_manager, stream_interest);
 
-    wp_core_load_component(core, "libwireplumber-module-mixer-api", "module", NULL, NULL, NULL, (GAsyncReadyCallback)on_plugin_loaded, &widget);
-    
+    wp_core_load_component(
+        core,
+        "libwireplumber-module-mixer-api",
+        "module",
+        NULL,
+        NULL,
+        NULL,
+        (GAsyncReadyCallback)on_plugin_loaded,
+        &widget
+    );
+
     wp_core_connect(core);
 }
 
@@ -132,26 +198,85 @@ void WpCommon::on_plugin_loaded(WpCore* core, GAsyncResult* res, void* widget){
 
 	wp_core_install_object_manager(core, object_manager);
 
-	g_signal_connect(object_manager, "installed", G_CALLBACK(WpCommon::on_om_installed), widget);
+	g_signal_connect(
+	    object_manager,
+	    "installed",
+	    G_CALLBACK(WpCommon::on_om_installed),
+	    widget
+	);
 }
 
 void WpCommon::on_om_installed(WpObjectManager *manager, gpointer widget){
-    g_signal_connect(WpCommon::object_manager, "object_added", G_CALLBACK(WpCommon::on_object_added), widget);
+    g_signal_connect(
+        WpCommon::object_manager,
+        "object_added",
+        G_CALLBACK(WpCommon::on_object_added),
+        widget
+    );
 }
 
 void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpointer widget){
     // makes a new widget and handles signals and callbacks for the new object
-    std::cout << "new object";
+
+    WpPipewireObject* obj = (WpPipewireObject*)object;
+
+    Gtk::Box* which_box;
+    const gchar* type = wp_pipewire_object_get_property(obj, PW_KEY_MEDIA_CLASS);
+    if (g_strcmp0(type, "Audio/Sink") == 0){
+        which_box = &(((WayfireWireplumber*)widget)->sinks_box);
+    }
+    else if (g_strcmp0(type, "Audio/Source") == 0){
+        which_box = &(((WayfireWireplumber*)widget)->sources_box);
+    }
+    else if (g_strcmp0(type, "Stream/Output/Audio") == 0){
+        which_box = &(((WayfireWireplumber*)widget)->streams_box);
+    }
+    else {
+        std::cout << "Could not match pipewire object media class, ignoring";
+        return;
+    }
+
 
     guint32 id = wp_proxy_get_bound_id(WP_PROXY(object));
 
-    auto scale = std::make_shared<WayfireAnimatedScale>();
+    // Gtk::Box* box = new Gtk::Box();
+    // if (WayfireWidget::config::is_horizontal){ // todo : make this configurable
+    //     box->set_orientation(Gtk::Orientation::VERTICAL);
+    // }
+    // else {
+    //     box->set_orientation(Gtk::Orientation::HORIZONTAL);
+    // }
+
+    WayfireAnimatedScale* scale = new WayfireAnimatedScale();
     scale->set_range(0.0, 1.0);
 	scale->set_target_value(0.5);
     scale->set_size_request(300, 0);
 
-	// g_signal_connect(manager, "object-removed", G_CALLBACK(on_object_removed), scale);
-	// g_signal_connect(object, "param-changed", G_CALLBACK(on_params_changed), scale);
+    const gchar* name;
+
+    // try to find a name to display
+    name = wp_pipewire_object_get_property(obj, PW_KEY_NODE_NICK);
+    if (!name){
+        name = wp_pipewire_object_get_property(obj, PW_KEY_NODE_NAME);
+    }
+    if (!name){
+      name = wp_pipewire_object_get_property(obj, PW_KEY_NODE_DESCRIPTION);
+    }
+    if (!name){
+        name = "Unnamed";
+    }
+
+    Gtk::Label* label = new Gtk::Label(Glib::ustring(name));
+
+    Gtk::Button* mute = new Gtk::Button();
+
+    Gtk::Grid* grid = new Gtk::Grid();
+    grid->attach(*label, 0, 0, 2, 1);
+    grid->attach(*scale, 0, 1, 1, 1);
+    grid->attach(*mute, 1, 1, 1, 1);
+
+	g_signal_connect(manager, "object-removed", G_CALLBACK(on_object_removed), scale);
+	g_signal_connect(object, "params-changed", G_CALLBACK(on_params_changed), scale);
 
 	scale->set_user_changed_callback([scale, id](){
 
@@ -171,37 +296,32 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
 		}
 	);
 
-	((WayfireWireplumber*)widget)->scales_box.append((Gtk::Widget&)*scale);
+	which_box->append((Gtk::Widget&)*grid);
 }
 
 void WpCommon::on_params_changed(WpPipewireObject *object, gchar *id, gpointer scale){
     // updates the value of a scale when it’s volume or mute status changes from elsewhere
-    std::cout << "param has changed";
 
     if (g_strcmp0(id, "Props") == 0){
         GVariant* v = NULL;
-        g_signal_emit_by_name(&mixer_api, "get_volume", wp_proxy_get_bound_id(WP_PROXY(object)), v);
+        g_signal_emit_by_name(mixer_api, "get_volume", wp_proxy_get_bound_id(WP_PROXY(object)), &v);
+        if (!v){
+            std::cout << "Object doesn’t support volume";
+            return;
+        }
+        gboolean mute;
+        gdouble volume;
+        g_variant_lookup(v, "volume", "d", &volume);
+        g_variant_lookup(v, "mute", "b", &mute);
+        g_clear_pointer(&v, g_variant_unref);
 
-	    // WpIterator* iterator = wp_pipewire_object_enum_params_sync(object, "SPA_PROP_volume", NULL);
-	    // GValue volume;
-	    // if (!wp_iterator_next(iterator, &volume)){
-	        // return;
-	    // }
-	    // g_assert(G_VALUE_HOLDS_FLOAT(&volume));
-
-		// (WayfireAnimatedScale&)scale->set_target_value(g_value_get_float(&volume));
-		WayfireAnimatedScale* animated_scale = static_cast<WayfireAnimatedScale*>(scale);
-        animated_scale->set_target_value(g_variant_get_double(v));
+        WayfireAnimatedScale* animated_scale = (WayfireAnimatedScale*)scale;
+        animated_scale->set_target_value(volume);
     }
 }
 
 void WpCommon::on_object_removed(WpObjectManager* manager, gpointer object, gpointer scale){
 	// cleanup on aisle 5 !
-	std::cout << "object removed";
-    WayfireAnimatedScale* animated_scale = static_cast<WayfireAnimatedScale*>(scale);
-    Gtk::Box* box = (Gtk::Box*)(animated_scale->get_parent());
-	box->remove((WayfireAnimatedScale&)scale);
-	delete animated_scale;
 }
 
 WayfireWireplumber::~WayfireWireplumber(){

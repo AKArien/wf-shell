@@ -10,6 +10,7 @@ extern "C" {
 }
 #include <wayfire/util/duration.hpp>
 
+class wayfire_config;
 class WayfireWireplumber : public WayfireWidget{
 	Gtk::Image main_image;
 	Gtk::Button button;
@@ -56,7 +57,9 @@ class WayfireWireplumber : public WayfireWidget{
 		void init(Gtk::Box *container) override;
 		virtual ~WayfireWireplumber();
 
-		Gtk::Box scales_box;
+		Gtk::Box sinks_box;
+		Gtk::Box sources_box;
+		Gtk::Box streams_box;
 
 		/** Update the icon based on volume and muted state */
 		void update_icon();
