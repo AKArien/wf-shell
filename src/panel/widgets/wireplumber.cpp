@@ -158,9 +158,10 @@ void WpCommon::init_wp(WayfireWireplumber& widget){
     	);
     	// catch up to the objects already registered by the core
         WpIterator* reg_objs = wp_object_manager_new_iterator(object_manager);
-        GValue* item;
-        while (wp_iterator_next(reg_objs, item)){
-            on_object_added(object_manager, (gpointer)item, &widget);
+        GValue item = G_VALUE_INIT;
+        while (wp_iterator_next(reg_objs, &item)){
+            on_object_added(object_manager, (gpointer)g_value_get_object(&item), &widget);
+            g_value_unset(&item);
         }
         return;
     }
