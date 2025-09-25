@@ -16,19 +16,17 @@ class WayfireWireplumber : public WayfireWidget{
 	Gtk::Button button;
 	Gtk::Popover popover;
 
+	/*
+		the « face » is the representation of the audio channel that shows it’s
+		volume level on the widget icon and is concerned by the quick actions.
+		currently, it is the last channel to have been updated.
+		we have the whole grid to show all the info in the popup upon updates
+		TODO : make this configurable, other ideas : default source/sink
+	*/
+	Gtk::Grid* face;
+
 	WfOption<double> timeout{"panel/volume_display_timeout"};
 	WfOption<double> scroll_sensitivity{"panel/volume_scroll_sensitivity"};
-
-	// static WpCore* core;
-	// static WpObjectManager* object_manager;
-
-	// void init_wp();
-
-	// static void on_object_added(WpObjectManager* manager, gpointer object, gpointer data);
-
-	// static void on_params_changed(WpPipewireObject* object, gchar* id, gpointer scale);
-
-	// static void on_object_removed(WpObjectManager* manager, gpointer node, gpointer scale);
 
 	// void on_volume_scroll(GdkEventScroll *event);
 	// void on_volume_button_press(GdkEventButton *event);
@@ -60,6 +58,7 @@ class WayfireWireplumber : public WayfireWidget{
 		Gtk::Box sinks_box;
 		Gtk::Box sources_box;
 		Gtk::Box streams_box;
+		// TODO : add a category for stuff that listens to an audio source
 
 		/** Update the icon based on volume and muted state */
 		void update_icon();

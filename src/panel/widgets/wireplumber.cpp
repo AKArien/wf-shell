@@ -26,7 +26,7 @@ enum VolumeLevel
     VOLUME_LEVEL_OOR, /* Out of range */
 };
 
-static VolumeLevel volume_icon_for(float volume, float max)
+static VolumeLevel volume_icon_for(double volume, double max)
 {
     auto third = max / 3;
     if (volume == 0)
@@ -46,8 +46,23 @@ static VolumeLevel volume_icon_for(float volume, float max)
     return VOLUME_LEVEL_OOR;
 }
 
+bool WayfireWireplumber::on_popover_timeout(int timer)
+{
+    popover.popdown();
+    return false;
+}
+
+void WayfireWireplumber::check_set_popover_timeout()
+{
+    popover_timeout.disconnect();
+
+    popover_timeout = Glib::signal_timeout().connect(sigc::bind(sigc::mem_fun(*this,
+        &WayfireWireplumber::on_popover_timeout), 0), timeout * 1000);
+}
+
 void WayfireWireplumber::init(Gtk::Box *container){
     // sets up the « widget » part
+
     /* Setup button */
     button.signal_clicked().connect([=]
     {
@@ -86,7 +101,7 @@ void WayfireWireplumber::init(Gtk::Box *container){
     // scroll_gesture->set_flags(Gtk::EventControllerScroll::Flags::VERTICAL);
     // button.add_controller(scroll_gesture);
 
-    // The container of the container of the containers of the scales
+    // boxes hierarchy and labeling
     Gtk::Orientation r1, r2;
     if (config::is_horizontal){ // todo : make this configurable
 
@@ -98,6 +113,7 @@ void WayfireWireplumber::init(Gtk::Box *container){
         r2 = Gtk::Orientation::HORIZONTAL;
     }
     Gtk::Box* master_box = new Gtk::Box(r1);
+    // TODO : only show the boxes which have stuff in them
     master_box->append(sinks_box);
     master_box->append(sources_box);
     master_box->append(streams_box);
@@ -220,6 +236,10 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
 
     WpPipewireObject* obj = (WpPipewireObject*)object;
 
+    /* TODO : add extra controls :
+        - for sinks and sources, wether to set as default
+        - for streams, which sink they go to
+    */
     Gtk::Box* which_box;
     const gchar* type = wp_pipewire_object_get_property(obj, PW_KEY_MEDIA_CLASS);
     if (g_strcmp0(type, "Audio/Sink") == 0){
@@ -238,14 +258,6 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
 
 
     guint32 id = wp_proxy_get_bound_id(WP_PROXY(object));
-
-    // Gtk::Box* box = new Gtk::Box();
-    // if (WayfireWidget::config::is_horizontal){ // todo : make this configurable
-    //     box->set_orientation(Gtk::Orientation::VERTICAL);
-    // }
-    // else {
-    //     box->set_orientation(Gtk::Orientation::HORIZONTAL);
-    // }
 
     WayfireAnimatedScale* scale = new WayfireAnimatedScale();
     scale->set_range(0.0, 1.0);
@@ -275,8 +287,8 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
     grid->attach(*scale, 0, 1, 1, 1);
     grid->attach(*mute, 1, 1, 1, 1);
 
-	g_signal_connect(manager, "object-removed", G_CALLBACK(on_object_removed), scale);
-	g_signal_connect(object, "params-changed", G_CALLBACK(on_params_changed), scale);
+	g_signal_connect(manager, "object-removed", G_CALLBACK(on_object_removed), grid);
+	g_signal_connect(object, "params-changed", G_CALLBACK(on_params_changed), grid);
 
 	scale->set_user_changed_callback([scale, id](){
 
@@ -292,21 +304,21 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
 
 	scale->signal_state_flags_changed().connect(
 	    [=](Gtk::StateFlags){
-            // check_set_popover_timeout();
+            ((WayfireWireplumber*)widget)->check_set_popover_timeout();
 		}
 	);
 
 	which_box->append((Gtk::Widget&)*grid);
 }
 
-void WpCommon::on_params_changed(WpPipewireObject *object, gchar *id, gpointer scale){
+void WpCommon::on_params_changed(WpPipewireObject *object, gchar *id, gpointer grid){
     // updates the value of a scale when it’s volume or mute status changes from elsewhere
 
     if (g_strcmp0(id, "Props") == 0){
         GVariant* v = NULL;
         g_signal_emit_by_name(mixer_api, "get_volume", wp_proxy_get_bound_id(WP_PROXY(object)), &v);
         if (!v){
-            std::cout << "Object doesn’t support volume";
+            std::cout << "Object doesn’t support volume, we really shouldn’t have gotten this far in the first place.";
             return;
         }
         gboolean mute;
@@ -315,13 +327,12 @@ void WpCommon::on_params_changed(WpPipewireObject *object, gchar *id, gpointer s
         g_variant_lookup(v, "mute", "b", &mute);
         g_clear_pointer(&v, g_variant_unref);
 
-        WayfireAnimatedScale* animated_scale = (WayfireAnimatedScale*)scale;
+        WayfireAnimatedScale* animated_scale = (WayfireAnimatedScale*)(((Gtk::Grid*)grid)->get_child_at(0, 1));
         animated_scale->set_target_value(volume);
     }
 }
 
-void WpCommon::on_object_removed(WpObjectManager* manager, gpointer object, gpointer scale){
-	// cleanup on aisle 5 !
+void WpCommon::on_object_removed(WpObjectManager* manager, gpointer object, gpointer grid){
 }
 
 WayfireWireplumber::~WayfireWireplumber(){
