@@ -149,14 +149,13 @@ void WpCommon::init_wp(WayfireWireplumber& widget){
         or on the same wf-panel. We re-use the core, manager and all other objects
     */
     if (core != nullptr){
-        std::cout << "wp core appears to already be up\n";
     	g_signal_connect(
     	    object_manager,
     	    "object_added",
     	    G_CALLBACK(on_object_added),
     	    &widget
     	);
-    	// catch up to the objects already registered by the core
+        // catch up to object already registered by the manager
         WpIterator* reg_objs = wp_object_manager_new_iterator(object_manager);
         GValue item = G_VALUE_INIT;
         while (wp_iterator_next(reg_objs, &item)){
@@ -171,7 +170,6 @@ void WpCommon::init_wp(WayfireWireplumber& widget){
 	object_manager = wp_object_manager_new();
 
 	// sinks, sources and streams
-    std::cout << "registering interests\n";
 	WpObjectInterest* sink_interest = wp_object_interest_new_type(WP_TYPE_NODE);
 	wp_object_interest_add_constraint(
 	    sink_interest,
@@ -221,29 +219,22 @@ void WpCommon::init_wp(WayfireWireplumber& widget){
 void WpCommon::on_plugin_loaded(WpCore* core, GAsyncResult* res, void* widget){
     mixer_api = wp_plugin_find(core, "mixer-api");
 
-	wp_core_install_object_manager(core, object_manager);
-
-	g_signal_connect(
-	    object_manager,
-	    "installed",
-	    G_CALLBACK(WpCommon::on_om_installed),
-	    widget
-	);
-}
-
-void WpCommon::on_om_installed(WpObjectManager *manager, gpointer widget){
     g_signal_connect(
-        manager,
+        object_manager,
+
+
         "object_added",
         G_CALLBACK(on_object_added),
         widget
     );
     g_signal_connect(
-        manager,
+        object_manager,
         "object-removed",
         G_CALLBACK(on_object_removed),
         widget
     );
+
+	wp_core_install_object_manager(core, object_manager);
 }
 
 void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpointer widget){
@@ -348,7 +339,6 @@ void WpCommon::on_params_changed(WpPipewireObject *object, gchar *id, gpointer g
 }
 
 void WpCommon::on_object_removed(WpObjectManager* manager, gpointer object, gpointer widget){
-    std::cout << "object removed\n";
     WayfireWireplumber* wdg = (WayfireWireplumber*)widget;
     auto it = wdg->objects_to_grids.find((WpPipewireObject*)object);
     if (it == wdg->objects_to_grids.end()){
