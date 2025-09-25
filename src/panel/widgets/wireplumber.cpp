@@ -140,29 +140,37 @@ void WayfireWireplumber::init(Gtk::Box *container){
 	WpCommon::init_wp(*this);
 }
 
+
 void WpCommon::init_wp(WayfireWireplumber& widget){
     // creates the core, object interests and connects signals
 
-    // this equates core being set to the status of wireplumber usage
-    // it allows re-using the core, object manager, etc through multiple
-    // instances of the widget, such as multiple monitors
+    /*
+        if the core is already set, we are another widget, wether on another monitor
+        or on the same wf-panel. We re-use the core, manager and all other objects
+    */
     if (core != nullptr){
-        std::cout << "wp core appears to already be up";
+        std::cout << "wp core appears to already be up\n";
     	g_signal_connect(
-    	    WpCommon::object_manager,
+    	    object_manager,
     	    "object_added",
-    	    G_CALLBACK(WpCommon::on_object_added),
+    	    G_CALLBACK(on_object_added),
     	    &widget
     	);
+    	// catch up to the objects already registered by the core
+        WpIterator* reg_objs = wp_object_manager_new_iterator(object_manager);
+        GValue* item;
+        while (wp_iterator_next(reg_objs, item)){
+            on_object_added(object_manager, (gpointer)item, &widget);
+        }
         return;
     }
-    std::cout << "Initialising wireplumber";
+    std::cout << "Initialising wireplumber\n";
     wp_init(WP_INIT_PIPEWIRE);
 	core = wp_core_new(NULL, NULL, NULL);
 	object_manager = wp_object_manager_new();
 
 	// sinks, sources and streams
-    std::cout << "registering interests";
+    std::cout << "registering interests\n";
 	WpObjectInterest* sink_interest = wp_object_interest_new_type(WP_TYPE_NODE);
 	wp_object_interest_add_constraint(
 	    sink_interest,
@@ -224,9 +232,15 @@ void WpCommon::on_plugin_loaded(WpCore* core, GAsyncResult* res, void* widget){
 
 void WpCommon::on_om_installed(WpObjectManager *manager, gpointer widget){
     g_signal_connect(
-        WpCommon::object_manager,
+        manager,
         "object_added",
-        G_CALLBACK(WpCommon::on_object_added),
+        G_CALLBACK(on_object_added),
+        widget
+    );
+    g_signal_connect(
+        manager,
+        "object-removed",
+        G_CALLBACK(on_object_removed),
         widget
     );
 }
@@ -252,7 +266,7 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
         which_box = &(((WayfireWireplumber*)widget)->streams_box);
     }
     else {
-        std::cout << "Could not match pipewire object media class, ignoring";
+        std::cout << "Could not match pipewire object media class, ignoring\n";
         return;
     }
 
@@ -287,7 +301,8 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
     grid->attach(*scale, 0, 1, 1, 1);
     grid->attach(*mute, 1, 1, 1, 1);
 
-	g_signal_connect(manager, "object-removed", G_CALLBACK(on_object_removed), grid);
+    ((WayfireWireplumber*)widget)->objects_to_grids.insert({obj, grid});
+
 	g_signal_connect(object, "params-changed", G_CALLBACK(on_params_changed), grid);
 
 	scale->set_user_changed_callback([scale, id](){
@@ -313,7 +328,6 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
 
 void WpCommon::on_params_changed(WpPipewireObject *object, gchar *id, gpointer grid){
     // updates the value of a scale when it’s volume or mute status changes from elsewhere
-
     if (g_strcmp0(id, "Props") == 0){
         GVariant* v = NULL;
         g_signal_emit_by_name(mixer_api, "get_volume", wp_proxy_get_bound_id(WP_PROXY(object)), &v);
@@ -332,7 +346,20 @@ void WpCommon::on_params_changed(WpPipewireObject *object, gchar *id, gpointer g
     }
 }
 
-void WpCommon::on_object_removed(WpObjectManager* manager, gpointer object, gpointer grid){
+void WpCommon::on_object_removed(WpObjectManager* manager, gpointer object, gpointer widget){
+    std::cout << "object removed\n";
+    WayfireWireplumber* wdg = (WayfireWireplumber*)widget;
+    auto it = wdg->objects_to_grids.find((WpPipewireObject*)object);
+    if (it == wdg->objects_to_grids.end()){
+        // checking to avoid weird situations
+        return;
+    }
+    Gtk::Grid* grid = it->second;
+    Gtk::Box* box = (Gtk::Box*)grid->get_parent();
+    box->remove(*grid);
+
+    delete grid;
+    wdg->objects_to_grids.erase((WpPipewireObject*)object);
 }
 
 WayfireWireplumber::~WayfireWireplumber(){

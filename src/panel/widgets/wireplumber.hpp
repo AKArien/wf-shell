@@ -9,6 +9,7 @@ extern "C" {
 	#include <wp/wp.h>
 }
 #include <wayfire/util/duration.hpp>
+#include <map>
 
 class wayfire_config;
 class WayfireWireplumber : public WayfireWidget{
@@ -60,6 +61,9 @@ class WayfireWireplumber : public WayfireWidget{
 		Gtk::Box streams_box;
 		// TODO : add a category for stuff that listens to an audio source
 
+		// to keep track of which control is associated with which node
+		std::map<WpPipewireObject*, Gtk::Grid*> objects_to_grids;
+
 		/** Update the icon based on volume and muted state */
 		void update_icon();
 
@@ -77,23 +81,17 @@ class WayfireWireplumber : public WayfireWidget{
 };
 
 namespace WpCommon{
-
 	static WpCore* core = nullptr;
 	static WpObjectManager* object_manager;
 	static WpPlugin* mixer_api;
 	static WpPlugin* default_nodes_api;
 
 	static void init_wp(WayfireWireplumber& widget);
-
 	static void on_plugin_loaded(WpCore* core, GAsyncResult* res, void* data);
-
 	static void on_om_installed(WpObjectManager* manager, gpointer widget);
-
-	static void on_object_added(WpObjectManager* manager, gpointer object, gpointer data);
-
-	static void on_params_changed(WpPipewireObject* object, gchar* id, gpointer scale);
-
-	static void on_object_removed(WpObjectManager* manager, gpointer node, gpointer scale);
+	static void on_object_added(WpObjectManager* manager, gpointer object, gpointer widget);
+	static void on_params_changed(WpPipewireObject* object, gchar* id, gpointer grid);
+	static void on_object_removed(WpObjectManager* manager, gpointer node, gpointer widget);
 }
 
 #endif // WIDGETS_PIPEWIRE_HPP
