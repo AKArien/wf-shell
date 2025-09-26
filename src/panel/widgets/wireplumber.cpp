@@ -7,6 +7,7 @@
 #include "gtkmm/enums.h"
 #include "gtkmm/label.h"
 #include "gtkmm/separator.h"
+#include "gtkmm/togglebutton.h"
 #include "launchers.hpp"
 #include "gtk-utils.hpp"
 #include "animated_scale.hpp"
@@ -286,28 +287,52 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
 
     Gtk::Label* label = new Gtk::Label(Glib::ustring(name));
 
-    Gtk::Button* mute = new Gtk::Button();
+    Gtk::ToggleButton* mute = new Gtk::ToggleButton();
 
     Gtk::Grid* grid = new Gtk::Grid();
     grid->attach(*label, 0, 0, 2, 1);
-    grid->attach(*scale, 0, 1, 1, 1);
     grid->attach(*mute, 1, 1, 1, 1);
+    grid->attach(*scale, 0, 1, 1, 1);
 
     ((WayfireWireplumber*)widget)->objects_to_grids.insert({obj, grid});
 
 	g_signal_connect(object, "params-changed", G_CALLBACK(on_params_changed), grid);
 
-	scale->set_user_changed_callback([scale, id](){
+    mute->signal_toggled().connect(
+        [mute, id, object](){
+            GVariant* v = NULL;
+            g_signal_emit_by_name(mixer_api, "get_volume", wp_proxy_get_bound_id(WP_PROXY(object)), &v);
+            gboolean cur_state;
+            g_variant_lookup(v, "mute", "b", &cur_state);
 
-        GVariantBuilder gvb = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
-        g_variant_builder_add(&gvb, "{sv}", "volume", g_variant_new_double(scale->get_target_value()));
-        GVariant* v = g_variant_builder_end(&gvb);
-        gboolean res FALSE;
-        g_signal_emit_by_name(mixer_api, "set-volume", id, v, &res);
-        if (!res){
+            if (cur_state == mute->get_active()){
+                // state has been externally changed, and this toggle is to align ourselves to it
+                return;
+            }
 
+            GVariantBuilder gvb = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
+            g_variant_builder_add(&gvb, "{sv}", "mute", g_variant_new_boolean(mute->get_active()));
+            GVariant* v_ = g_variant_builder_end(&gvb);
+            gboolean res FALSE;
+            g_signal_emit_by_name(mixer_api, "set-volume", id, v_, &res);
+            if (!res){
+
+            }
         }
-	});
+    );
+
+	scale->set_user_changed_callback(
+	    [scale, id](){
+            GVariantBuilder gvb = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
+            g_variant_builder_add(&gvb, "{sv}", "volume", g_variant_new_double(scale->get_target_value()));
+            GVariant* v = g_variant_builder_end(&gvb);
+            gboolean res FALSE;
+            g_signal_emit_by_name(mixer_api, "set-volume", id, v, &res);
+            if (!res){
+
+            }
+        }
+	);
 
 	scale->signal_state_flags_changed().connect(
 	    [=](Gtk::StateFlags){
@@ -334,6 +359,9 @@ void WpCommon::on_params_changed(WpPipewireObject *object, gchar *id, gpointer g
         g_clear_pointer(&v, g_variant_unref);
 
         WayfireAnimatedScale* animated_scale = (WayfireAnimatedScale*)(((Gtk::Grid*)grid)->get_child_at(0, 1));
+        Gtk::ToggleButton* button = (Gtk::ToggleButton*)(((Gtk::Grid*)grid)->get_child_at(1, 1));
+
+        button->set_active(!mute);
         animated_scale->set_target_value(volume);
     }
 }
