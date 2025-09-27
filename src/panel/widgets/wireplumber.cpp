@@ -190,7 +190,9 @@ void WayfireWireplumber::init(Gtk::Box *container){
     Gtk::Box* master_box = new Gtk::Box(r1);
     // TODO : only show the boxes which have stuff in them
     master_box->append(sinks_box);
+    master_box->append(*new Gtk::Separator(r1));
     master_box->append(sources_box);
+    master_box->append(*new Gtk::Separator(r1));
     master_box->append(streams_box);
     sinks_box.set_orientation(r2);
     sinks_box.append(*new Gtk::Label("Output devices"));
