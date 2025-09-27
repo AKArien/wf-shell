@@ -2,7 +2,9 @@
 #define WIDGETS_PIPEWIRE_HPP
 
 #include "../widget.hpp"
+#include "gtkmm/togglebutton.h"
 #include "wf-popover.hpp"
+#include "wp/proxy-interfaces.h"
 #include <gtkmm/image.h>
 #include <gtkmm/scale.h>
 extern "C" {
@@ -10,6 +12,21 @@ extern "C" {
 }
 #include <wayfire/util/duration.hpp>
 #include <map>
+
+class WfWpControl : public Gtk::Grid{
+	// Custom grid with extra methods and data to facilitate handling
+	private:
+		WayfireAnimatedScale scale;
+		Gtk::Label label;
+		Gtk::ToggleButton button;
+		WpPipewireObject* object;
+		sigc::connection mute_conn;
+
+	public:
+		WfWpControl(WpPipewireObject* obj);
+		void chg_btn_status_no_callbk(bool state);
+		void set_scale_target_value(double volume);
+};
 
 class wayfire_config;
 class WayfireWireplumber : public WayfireWidget{
@@ -24,7 +41,7 @@ class WayfireWireplumber : public WayfireWidget{
 		we have the whole grid to show all the info in the popup upon updates
 		TODO : make this configurable, other ideas : default source/sink
 	*/
-	Gtk::Grid* face;
+	WfWpControl* face;
 
 	WfOption<double> timeout{"panel/volume_display_timeout"};
 	WfOption<double> scroll_sensitivity{"panel/volume_scroll_sensitivity"};
@@ -62,7 +79,7 @@ class WayfireWireplumber : public WayfireWidget{
 		// TODO : add a category for stuff that listens to an audio source
 
 		// to keep track of which control is associated with which node
-		std::map<WpPipewireObject*, Gtk::Grid*> objects_to_grids;
+		std::map<WpPipewireObject*, WfWpControl*> objects_to_controls;
 
 		/** Update the icon based on volume and muted state */
 		void update_icon();

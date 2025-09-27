@@ -47,6 +47,80 @@ static VolumeLevel volume_icon_for(double volume, double max)
     return VOLUME_LEVEL_OOR;
 }
 
+WfWpControl::WfWpControl(WpPipewireObject* obj){
+
+    object = obj;
+
+    guint32 id = wp_proxy_get_bound_id(WP_PROXY(object));
+
+    scale.set_range(0.0, 1.0);
+	scale.set_target_value(0.5);
+    scale.set_size_request(300, 0);
+
+    const gchar* name;
+
+    // try to find a name to display
+    name = wp_pipewire_object_get_property(object, PW_KEY_NODE_NICK);
+    if (!name){
+        name = wp_pipewire_object_get_property(object, PW_KEY_NODE_NAME);
+    }
+    if (!name){
+      name = wp_pipewire_object_get_property(object, PW_KEY_NODE_DESCRIPTION);
+    }
+    if (!name){
+        name = "Unnamed";
+    }
+
+    label.set_text(Glib::ustring(name));
+
+    attach(label, 0, 0, 2, 1);
+    attach(button, 1, 1, 1, 1);
+    attach(scale, 0, 1, 1, 1);
+
+	g_signal_connect(object, "params-changed", G_CALLBACK(WpCommon::on_params_changed), this);
+    mute_conn = button.signal_toggled().connect(
+        [this, id](){
+            GVariantBuilder gvb = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
+            g_variant_builder_add(&gvb, "{sv}", "mute", g_variant_new_boolean(button.get_active()));
+            GVariant* v = g_variant_builder_end(&gvb);
+            gboolean res FALSE;
+            g_signal_emit_by_name(WpCommon::mixer_api, "set-volume", id, v, &res);
+            if (!res){
+
+            }
+        }
+    );
+
+	scale.set_user_changed_callback(
+	    [this, id](){
+            GVariantBuilder gvb = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
+            g_variant_builder_add(&gvb, "{sv}", "volume", g_variant_new_double(scale.get_target_value()));
+            GVariant* v = g_variant_builder_end(&gvb);
+            gboolean res FALSE;
+            g_signal_emit_by_name(WpCommon::mixer_api, "set-volume", id, v, &res);
+            if (!res){
+
+            }
+        }
+	);
+
+	scale.signal_state_flags_changed().connect(
+	    [=](Gtk::StateFlags){
+            // ((WayfireWireplumber*)widget)->check_set_popover_timeout();
+		}
+	);
+}
+
+void WfWpControl::chg_btn_status_no_callbk(bool state){
+    mute_conn.block();
+    button.set_active(!state);
+    mute_conn.unblock();
+}
+
+void WfWpControl::set_scale_target_value(double volume){
+    scale.set_target_value(volume);
+}
+
 bool WayfireWireplumber::on_popover_timeout(int timer)
 {
     popover.popdown();
@@ -165,6 +239,7 @@ void WpCommon::init_wp(WayfireWireplumber& widget){
         }
         return;
     }
+
     std::cout << "Initialising wireplumber\n";
     wp_init(WP_INIT_PIPEWIRE);
 	core = wp_core_new(NULL, NULL, NULL);
@@ -263,88 +338,16 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
         return;
     }
 
+    WfWpControl* control = new WfWpControl(obj);
 
-    guint32 id = wp_proxy_get_bound_id(WP_PROXY(object));
+    ((WayfireWireplumber*)widget)->objects_to_controls.insert({obj, control});
 
-    WayfireAnimatedScale* scale = new WayfireAnimatedScale();
-    scale->set_range(0.0, 1.0);
-	scale->set_target_value(0.5);
-    scale->set_size_request(300, 0);
-
-    const gchar* name;
-
-    // try to find a name to display
-    name = wp_pipewire_object_get_property(obj, PW_KEY_NODE_NICK);
-    if (!name){
-        name = wp_pipewire_object_get_property(obj, PW_KEY_NODE_NAME);
-    }
-    if (!name){
-      name = wp_pipewire_object_get_property(obj, PW_KEY_NODE_DESCRIPTION);
-    }
-    if (!name){
-        name = "Unnamed";
-    }
-
-    Gtk::Label* label = new Gtk::Label(Glib::ustring(name));
-
-    Gtk::ToggleButton* mute = new Gtk::ToggleButton();
-
-    Gtk::Grid* grid = new Gtk::Grid();
-    grid->attach(*label, 0, 0, 2, 1);
-    grid->attach(*mute, 1, 1, 1, 1);
-    grid->attach(*scale, 0, 1, 1, 1);
-
-    ((WayfireWireplumber*)widget)->objects_to_grids.insert({obj, grid});
-
-	g_signal_connect(object, "params-changed", G_CALLBACK(on_params_changed), grid);
-
-    mute->signal_toggled().connect(
-        [mute, id, object](){
-            GVariant* v = NULL;
-            g_signal_emit_by_name(mixer_api, "get_volume", wp_proxy_get_bound_id(WP_PROXY(object)), &v);
-            gboolean cur_state;
-            g_variant_lookup(v, "mute", "b", &cur_state);
-
-            if (cur_state == mute->get_active()){
-                // state has been externally changed, and this toggle is to align ourselves to it
-                return;
-            }
-
-            GVariantBuilder gvb = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
-            g_variant_builder_add(&gvb, "{sv}", "mute", g_variant_new_boolean(mute->get_active()));
-            GVariant* v_ = g_variant_builder_end(&gvb);
-            gboolean res FALSE;
-            g_signal_emit_by_name(mixer_api, "set-volume", id, v_, &res);
-            if (!res){
-
-            }
-        }
-    );
-
-	scale->set_user_changed_callback(
-	    [scale, id](){
-            GVariantBuilder gvb = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
-            g_variant_builder_add(&gvb, "{sv}", "volume", g_variant_new_double(scale->get_target_value()));
-            GVariant* v = g_variant_builder_end(&gvb);
-            gboolean res FALSE;
-            g_signal_emit_by_name(mixer_api, "set-volume", id, v, &res);
-            if (!res){
-
-            }
-        }
-	);
-
-	scale->signal_state_flags_changed().connect(
-	    [=](Gtk::StateFlags){
-            ((WayfireWireplumber*)widget)->check_set_popover_timeout();
-		}
-	);
-
-	which_box->append((Gtk::Widget&)*grid);
+	which_box->append((Gtk::Widget&)*control);
 }
 
-void WpCommon::on_params_changed(WpPipewireObject *object, gchar *id, gpointer grid){
+void WpCommon::on_params_changed(WpPipewireObject *object, gchar *id, gpointer control){
     // updates the value of a scale when it’s volume or mute status changes from elsewhere
+
     if (g_strcmp0(id, "Props") == 0){
         GVariant* v = NULL;
         g_signal_emit_by_name(mixer_api, "get_volume", wp_proxy_get_bound_id(WP_PROXY(object)), &v);
@@ -358,27 +361,25 @@ void WpCommon::on_params_changed(WpPipewireObject *object, gchar *id, gpointer g
         g_variant_lookup(v, "mute", "b", &mute);
         g_clear_pointer(&v, g_variant_unref);
 
-        WayfireAnimatedScale* animated_scale = (WayfireAnimatedScale*)(((Gtk::Grid*)grid)->get_child_at(0, 1));
-        Gtk::ToggleButton* button = (Gtk::ToggleButton*)(((Gtk::Grid*)grid)->get_child_at(1, 1));
-
-        button->set_active(!mute);
-        animated_scale->set_target_value(volume);
+        ((WfWpControl*)control)->chg_btn_status_no_callbk(mute);
+        ((WfWpControl*)control)->set_scale_target_value(volume);
     }
 }
 
 void WpCommon::on_object_removed(WpObjectManager* manager, gpointer object, gpointer widget){
+
     WayfireWireplumber* wdg = (WayfireWireplumber*)widget;
-    auto it = wdg->objects_to_grids.find((WpPipewireObject*)object);
-    if (it == wdg->objects_to_grids.end()){
-        // checking to avoid weird situations
+    auto it = wdg->objects_to_controls.find((WpPipewireObject*)object);
+    if (it == wdg->objects_to_controls.end()){
+        // shouldn’t happen, but checking to avoid weird situations
         return;
     }
-    Gtk::Grid* grid = it->second;
-    Gtk::Box* box = (Gtk::Box*)grid->get_parent();
-    box->remove(*grid);
+    WfWpControl* control = it->second;
+    Gtk::Box* box = (Gtk::Box*)control->get_parent();
+    box->remove(*control);
 
-    delete grid;
-    wdg->objects_to_grids.erase((WpPipewireObject*)object);
+    delete control;
+    wdg->objects_to_controls.erase((WpPipewireObject*)object);
 }
 
 WayfireWireplumber::~WayfireWireplumber(){
