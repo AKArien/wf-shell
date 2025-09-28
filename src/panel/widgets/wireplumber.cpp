@@ -78,6 +78,7 @@ WfWpControl::WfWpControl(WpPipewireObject* obj){
     attach(scale, 0, 1, 1, 1);
 
 	g_signal_connect(object, "params-changed", G_CALLBACK(WpCommon::on_params_changed), this);
+
     mute_conn = button.signal_toggled().connect(
         [this, id](){
             GVariantBuilder gvb = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
@@ -94,7 +95,7 @@ WfWpControl::WfWpControl(WpPipewireObject* obj){
 	scale.set_user_changed_callback(
 	    [this, id](){
             GVariantBuilder gvb = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
-            g_variant_builder_add(&gvb, "{sv}", "volume", g_variant_new_double(scale.get_target_value()));
+            g_variant_builder_add(&gvb, "{sv}", "volume", g_variant_new_double(std::pow(scale.get_target_value(), 3))); // see line 301
             GVariant* v = g_variant_builder_end(&gvb);
             gboolean res FALSE;
             g_signal_emit_by_name(WpCommon::mixer_api, "set-volume", id, v, &res);
@@ -111,9 +112,9 @@ WfWpControl::WfWpControl(WpPipewireObject* obj){
 	);
 }
 
-void WfWpControl::chg_btn_status_no_callbk(bool state){
+void WfWpControl::set_btn_status_no_callbk(bool state){
     mute_conn.block();
-    button.set_active(!state);
+    button.set_active(state);
     mute_conn.unblock();
 }
 
@@ -284,7 +285,7 @@ void WpCommon::init_wp(WayfireWireplumber& widget){
         core,
         "libwireplumber-module-mixer-api",
         "module",
-        NULL,
+        wp_spa_json_new_from_string("{\"scale\": 0}"),
         NULL,
         NULL,
         (GAsyncReadyCallback)on_plugin_loaded,
@@ -296,11 +297,13 @@ void WpCommon::init_wp(WayfireWireplumber& widget){
 
 void WpCommon::on_plugin_loaded(WpCore* core, GAsyncResult* res, void* widget){
     mixer_api = wp_plugin_find(core, "mixer-api");
+    // as far as i understand, this should set the mixer api to use linear scale
+    // however, it doesn’t and i can’t find what is wrong.
+    // until somesone figures it out, we calculate ourselves on lines 97 and 369
+    // g_object_set(mixer_api, "scale", 0, NULL); // set to linear
 
     g_signal_connect(
         object_manager,
-
-
         "object_added",
         G_CALLBACK(on_object_added),
         widget
@@ -363,8 +366,8 @@ void WpCommon::on_params_changed(WpPipewireObject *object, gchar *id, gpointer c
         g_variant_lookup(v, "mute", "b", &mute);
         g_clear_pointer(&v, g_variant_unref);
 
-        ((WfWpControl*)control)->chg_btn_status_no_callbk(mute);
-        ((WfWpControl*)control)->set_scale_target_value(volume);
+        ((WfWpControl*)control)->set_btn_status_no_callbk(mute);
+        ((WfWpControl*)control)->set_scale_target_value(std::cbrt(volume)); // see line 301
     }
 }
 

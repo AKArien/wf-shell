@@ -24,7 +24,7 @@ class WfWpControl : public Gtk::Grid{
 
 	public:
 		WfWpControl(WpPipewireObject* obj);
-		void chg_btn_status_no_callbk(bool state);
+		void set_btn_status_no_callbk(bool state);
 		void set_scale_target_value(double volume);
 };
 
