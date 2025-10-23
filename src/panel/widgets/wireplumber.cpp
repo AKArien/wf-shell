@@ -172,10 +172,15 @@ void WayfireWireplumber::init(Gtk::Box *container){
         if (!popover.is_visible())
         {
             popover.popup();
-        } else
-        {
-            popover.popdown();
+            popover.set_child(master_box);
+            return;
         }
+        if (popover.get_child() != (Gtk::Widget*)(&master_box)){
+            // if the popover was a single control, switch it to the full mixer and stay deployed
+            popover.set_child(master_box);
+            return;
+        }
+        popover.popdown();
     });
     auto style = button.get_style_context();
     style->add_class("volume");
