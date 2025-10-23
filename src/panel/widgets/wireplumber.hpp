@@ -26,6 +26,8 @@ class WfWpControl : public Gtk::Grid{
 		WpPipewireObject* object;
 		void set_btn_status_no_callbk(bool state);
 		void set_scale_target_value(double volume);
+		double get_scale_target_value();
+		bool is_muted();
 		WfWpControl* copy();
 };
 

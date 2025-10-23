@@ -27,8 +27,8 @@ enum VolumeLevel
     VOLUME_LEVEL_OOR, /* Out of range */
 };
 
-static VolumeLevel volume_icon_for(double volume, double max)
-{
+static VolumeLevel volume_icon_for(double volume){
+    double max = 1.0;
     auto third = max / 3;
     if (volume == 0)
     {
@@ -136,6 +136,14 @@ void WfWpControl::set_scale_target_value(double volume){
     scale.set_target_value(volume);
 }
 
+double WfWpControl::get_scale_target_value(){
+    return scale.get_target_value();
+}
+
+bool WfWpControl::is_muted(){
+    return button.get_active();
+}
+
 WfWpControl* WfWpControl::copy(){
     WfWpControl* copy = new WfWpControl(object);
     return copy;
@@ -238,6 +246,25 @@ void WayfireWireplumber::init(Gtk::Box *container){
 	WpCommon::init_wp(*this);
 }
 
+void WayfireWireplumber::update_icon()
+{
+    VolumeLevel current = volume_icon_for(face->get_scale_target_value());
+
+    if (!face || face->is_muted()){
+        main_image.set_from_icon_name("audio-volume-muted");
+        return;
+    }
+
+    std::map<VolumeLevel, std::string> icon_name_from_state = {
+        {VOLUME_LEVEL_MUTE, "audio-volume-muted"},
+        {VOLUME_LEVEL_LOW, "audio-volume-low"},
+        {VOLUME_LEVEL_MED, "audio-volume-medium"},
+        {VOLUME_LEVEL_HIGH, "audio-volume-high"},
+        {VOLUME_LEVEL_OOR, "audio-volume-muted"},
+    };
+
+    main_image.set_from_icon_name(icon_name_from_state.at(current));
+}
 
 void WpCommon::init_wp(WayfireWireplumber& widget){
     // creates the core, object interests and connects signals
@@ -412,6 +439,7 @@ void WpCommon::on_mixer_changed(gpointer mixer, guint id, gpointer widget)
         wdg->popover.set_child(*wdg->face);
     }
 
+    // this feels a bit ugly, but it’s probably alright
     wdg->face->set_btn_status_no_callbk(mute);
     wdg->face->set_scale_target_value(std::cbrt(volume)); // see line x
 
@@ -421,6 +449,8 @@ void WpCommon::on_mixer_changed(gpointer mixer, guint id, gpointer widget)
     else {
         wdg->check_set_popover_timeout();
     }
+
+    wdg->update_icon();
 }
 
 void WpCommon::on_object_removed(WpObjectManager* manager, gpointer object, gpointer widget){
