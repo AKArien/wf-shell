@@ -19,29 +19,20 @@ class WfWpControl : public Gtk::Grid{
 		WayfireAnimatedScale scale;
 		Gtk::Label label;
 		Gtk::ToggleButton button;
-		WpPipewireObject* object;
 		sigc::connection mute_conn;
 
 	public:
 		WfWpControl(WpPipewireObject* obj);
+		WpPipewireObject* object;
 		void set_btn_status_no_callbk(bool state);
 		void set_scale_target_value(double volume);
+		WfWpControl* copy();
 };
 
 class wayfire_config;
 class WayfireWireplumber : public WayfireWidget{
 	Gtk::Image main_image;
 	Gtk::Button button;
-	Gtk::Popover popover;
-
-	/*
-		the « face » is the representation of the audio channel that shows it’s
-		volume level on the widget icon and is concerned by the quick actions.
-		currently, it is the last channel to have been updated.
-		we have the whole grid to show all the info in the popup upon updates
-		TODO : make this configurable, other ideas : default source/sink
-	*/
-	WfWpControl* face;
 
 	WfOption<double> timeout{"panel/volume_display_timeout"};
 	WfOption<double> scroll_sensitivity{"panel/volume_scroll_sensitivity"};
@@ -73,9 +64,18 @@ class WayfireWireplumber : public WayfireWidget{
 		void init(Gtk::Box *container) override;
 		virtual ~WayfireWireplumber();
 
-		Gtk::Box sinks_box;
-		Gtk::Box sources_box;
-		Gtk::Box streams_box;
+		Gtk::Popover popover;
+
+		/*
+			the « face » is the representation of the audio channel that shows it’s
+			volume level on the widget icon and is concerned by the quick actions.
+			currently, it is the last channel to have been updated.
+			we have the whole grid to show all the info in the popup upon updates
+			TODO : make this configurable, other ideas : default source/sink
+		*/
+		WfWpControl* face;
+
+		Gtk::Box master_box, sinks_box, sources_box, streams_box;
 		// TODO : add a category for stuff that listens to an audio source
 
 		// to keep track of which control is associated with which node

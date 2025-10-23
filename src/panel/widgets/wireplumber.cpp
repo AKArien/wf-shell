@@ -108,6 +108,22 @@ WfWpControl::WfWpControl(WpPipewireObject* obj){
             // ((WayfireWireplumber*)widget)->check_set_popover_timeout();
 		}
 	);
+
+    // ugly copy-paste of on_mixer_changed code, clean this
+    GVariant* v = NULL;
+    g_signal_emit_by_name(WpCommon::mixer_api, "get_volume", wp_proxy_get_bound_id(WP_PROXY(object)), &v);
+    if (!v){
+        // Object doesn’t support volume, we really shouldn’t have gotten this far in the first place
+        return;
+    }
+    gboolean mute;
+    gdouble volume;
+    g_variant_lookup(v, "volume", "d", &volume);
+    g_variant_lookup(v, "mute", "b", &mute);
+    g_clear_pointer(&v, g_variant_unref);
+    std::cout << "volume : " << volume << ", mute : " << mute << "\n";
+    set_btn_status_no_callbk(mute);
+    set_scale_target_value(std::cbrt(volume)); // see line x
 }
 
 void WfWpControl::set_btn_status_no_callbk(bool state){
@@ -118,6 +134,11 @@ void WfWpControl::set_btn_status_no_callbk(bool state){
 
 void WfWpControl::set_scale_target_value(double volume){
     scale.set_target_value(volume);
+}
+
+WfWpControl* WfWpControl::copy(){
+    WfWpControl* copy = new WfWpControl(object);
+    return copy;
 }
 
 bool WayfireWireplumber::on_popover_timeout(int timer)
@@ -135,7 +156,7 @@ void WayfireWireplumber::check_set_popover_timeout()
 }
 
 void WayfireWireplumber::init(Gtk::Box *container){
-    // sets up the « widget » part
+    // sets up the « widget part »
 
     /* Setup button */
     button.signal_clicked().connect([=]
@@ -186,13 +207,14 @@ void WayfireWireplumber::init(Gtk::Box *container){
         r1 = Gtk::Orientation::VERTICAL;
         r2 = Gtk::Orientation::HORIZONTAL;
     }
-    Gtk::Box* master_box = new Gtk::Box(r1);
+    // Gtk::Box* master_box = new eeeGtk::Box(r1);
+    master_box.set_orientation(r1);
     // TODO : only show the boxes which have stuff in them
-    master_box->append(sinks_box);
-    master_box->append(*new Gtk::Separator(r1));
-    master_box->append(sources_box);
-    master_box->append(*new Gtk::Separator(r1));
-    master_box->append(streams_box);
+    master_box.append(sinks_box);
+    master_box.append(*new Gtk::Separator(r1));
+    master_box.append(sources_box);
+    master_box.append(*new Gtk::Separator(r1));
+    master_box.append(streams_box);
     sinks_box.set_orientation(r2);
     sinks_box.append(*new Gtk::Label("Output devices"));
     sinks_box.append(*new Gtk::Separator(r2));
@@ -205,7 +227,7 @@ void WayfireWireplumber::init(Gtk::Box *container){
 
     /* Setup popover */
     popover.set_autohide(false);
-    popover.set_child(*master_box);
+    popover.set_child(master_box);
     popover.get_style_context()->add_class("volume-popover");
     // popover.add_controller(scroll_gesture);
 
@@ -353,22 +375,6 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
     ((WayfireWireplumber*)widget)->objects_to_controls.insert({obj, control});
 
 	which_box->append((Gtk::Widget&)*control);
-
-    // ugly copy-paste of on_mixer_changed code, clean this
-    GVariant* v = NULL;
-    g_signal_emit_by_name(mixer_api, "get_volume", wp_proxy_get_bound_id(WP_PROXY(object)), &v);
-    if (!v){
-        // Object doesn’t support volume, we really shouldn’t have gotten this far in the first place
-        return;
-    }
-    gboolean mute;
-    gdouble volume;
-    g_variant_lookup(v, "volume", "d", &volume);
-    g_variant_lookup(v, "mute", "b", &mute);
-    g_clear_pointer(&v, g_variant_unref);
-    std::cout << "volume : " << volume << ", mute : " << mute << "\n";
-    ((WfWpControl*)control)->set_btn_status_no_callbk(mute);
-    ((WfWpControl*)control)->set_scale_target_value(std::cbrt(volume)); // see line x
 }
 
 void WpCommon::on_mixer_changed(gpointer mixer, guint id, gpointer widget)
@@ -388,14 +394,32 @@ void WpCommon::on_mixer_changed(gpointer mixer, guint id, gpointer widget)
 
     WayfireWireplumber* wdg = (WayfireWireplumber*)widget;
     // find the control that corresponds to this id (match bound id)
+    WfWpControl* control;
+
     for (const auto &it : wdg->objects_to_controls) {
         WpPipewireObject* obj = it.first;
-        WfWpControl* control = it.second;
-        if (wp_proxy_get_bound_id(WP_PROXY(obj)) == id) {
-            control->set_btn_status_no_callbk(mute);
-            control->set_scale_target_value(std::cbrt(volume)); // see line x
+        control = it.second;
+        if (wp_proxy_get_bound_id(WP_PROXY(obj)) == id){
             break;
         }
+    }
+
+    control->set_btn_status_no_callbk(mute);
+    control->set_scale_target_value(std::cbrt(volume)); // see line x
+
+    if (control->object != ((WfWpControl*)(wdg->popover.get_child()))->object){
+        wdg->face = control->copy();
+        wdg->popover.set_child(*wdg->face);
+    }
+
+    wdg->face->set_btn_status_no_callbk(mute);
+    wdg->face->set_scale_target_value(std::cbrt(volume)); // see line x
+
+    if (!wdg->popover.is_visible()){
+        wdg->popover.popup();
+    }
+    else {
+        wdg->check_set_popover_timeout();
     }
 }
 
