@@ -77,8 +77,6 @@ WfWpControl::WfWpControl(WpPipewireObject* obj){
     attach(button, 1, 1, 1, 1);
     attach(scale, 0, 1, 1, 1);
 
-	g_signal_connect(object, "params-changed", G_CALLBACK(WpCommon::on_params_changed), this);
-
     mute_conn = button.signal_toggled().connect(
         [this, id](){
             GVariantBuilder gvb = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
@@ -95,7 +93,7 @@ WfWpControl::WfWpControl(WpPipewireObject* obj){
 	scale.set_user_changed_callback(
 	    [this, id](){
             GVariantBuilder gvb = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
-            g_variant_builder_add(&gvb, "{sv}", "volume", g_variant_new_double(std::pow(scale.get_target_value(), 3))); // see line 301
+            g_variant_builder_add(&gvb, "{sv}", "volume", g_variant_new_double(std::pow(scale.get_target_value(), 3))); // see line x
             GVariant* v = g_variant_builder_end(&gvb);
             gboolean res FALSE;
             g_signal_emit_by_name(WpCommon::mixer_api, "set-volume", id, v, &res);
@@ -301,6 +299,12 @@ void WpCommon::on_plugin_loaded(WpCore* core, GAsyncResult* res, void* widget){
     // however, it doesn’t and i can’t find what is wrong.
     // until somesone figures it out, we calculate ourselves on lines 97 and 369
     // g_object_set(mixer_api, "scale", 0, NULL); // set to linear
+    g_signal_connect(
+        mixer_api,
+        "changed",
+        G_CALLBACK(WpCommon::on_mixer_changed),
+        widget
+    );
 
     g_signal_connect(
         object_manager,
@@ -308,6 +312,7 @@ void WpCommon::on_plugin_loaded(WpCore* core, GAsyncResult* res, void* widget){
         G_CALLBACK(on_object_added),
         widget
     );
+
     g_signal_connect(
         object_manager,
         "object-removed",
@@ -348,26 +353,49 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
     ((WayfireWireplumber*)widget)->objects_to_controls.insert({obj, control});
 
 	which_box->append((Gtk::Widget&)*control);
+
+    // ugly copy-paste of on_mixer_changed code, clean this
+    GVariant* v = NULL;
+    g_signal_emit_by_name(mixer_api, "get_volume", wp_proxy_get_bound_id(WP_PROXY(object)), &v);
+    if (!v){
+        // Object doesn’t support volume, we really shouldn’t have gotten this far in the first place
+        return;
+    }
+    gboolean mute;
+    gdouble volume;
+    g_variant_lookup(v, "volume", "d", &volume);
+    g_variant_lookup(v, "mute", "b", &mute);
+    g_clear_pointer(&v, g_variant_unref);
+    std::cout << "volume : " << volume << ", mute : " << mute << "\n";
+    ((WfWpControl*)control)->set_btn_status_no_callbk(mute);
+    ((WfWpControl*)control)->set_scale_target_value(std::cbrt(volume)); // see line x
 }
 
-void WpCommon::on_params_changed(WpPipewireObject *object, gchar *id, gpointer control){
-    // updates the value of a scale when it’s volume or mute status changes from elsewhere
+void WpCommon::on_mixer_changed(gpointer mixer, guint id, gpointer widget)
+{
+    GVariant* v = NULL;
+    // ask the mixer-api for the up-to-date data
+    g_signal_emit_by_name(WpCommon::mixer_api, "get-volume", id, &v);
+    if (!v) {
+        return;
+    }
 
-    if (g_strcmp0(id, "Props") == 0){
-        GVariant* v = NULL;
-        g_signal_emit_by_name(mixer_api, "get_volume", wp_proxy_get_bound_id(WP_PROXY(object)), &v);
-        if (!v){
-            std::cout << "Object doesn’t support volume, we really shouldn’t have gotten this far in the first place.";
-            return;
+    gboolean mute = FALSE;
+    gdouble volume = 0.0;
+    g_variant_lookup(v, "volume", "d", &volume);
+    g_variant_lookup(v, "mute", "b", &mute);
+    g_clear_pointer(&v, g_variant_unref);
+
+    WayfireWireplumber* wdg = (WayfireWireplumber*)widget;
+    // find the control that corresponds to this id (match bound id)
+    for (const auto &it : wdg->objects_to_controls) {
+        WpPipewireObject* obj = it.first;
+        WfWpControl* control = it.second;
+        if (wp_proxy_get_bound_id(WP_PROXY(obj)) == id) {
+            control->set_btn_status_no_callbk(mute);
+            control->set_scale_target_value(std::cbrt(volume)); // see line x
+            break;
         }
-        gboolean mute;
-        gdouble volume;
-        g_variant_lookup(v, "volume", "d", &volume);
-        g_variant_lookup(v, "mute", "b", &mute);
-        g_clear_pointer(&v, g_variant_unref);
-
-        ((WfWpControl*)control)->set_btn_status_no_callbk(mute);
-        ((WfWpControl*)control)->set_scale_target_value(std::cbrt(volume)); // see line 301
     }
 }
 

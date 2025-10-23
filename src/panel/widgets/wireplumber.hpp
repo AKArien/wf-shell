@@ -107,7 +107,7 @@ namespace WpCommon{
 	static void on_plugin_loaded(WpCore* core, GAsyncResult* res, void* data);
 	static void on_om_installed(WpObjectManager* manager, gpointer widget);
 	static void on_object_added(WpObjectManager* manager, gpointer object, gpointer widget);
-	static void on_params_changed(WpPipewireObject* object, gchar* id, gpointer grid);
+	static void on_mixer_changed(gpointer mixer, guint id, gpointer widet);
 	static void on_object_removed(WpObjectManager* manager, gpointer node, gpointer widget);
 }
 
