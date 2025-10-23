@@ -1,5 +1,6 @@
 #include <gtkmm.h>
 #include <iostream>
+#include <algorithm>
 #include <glibmm.h>
 #include "gio/gio.h"
 #include "glib-object.h"
@@ -188,26 +189,38 @@ void WayfireWireplumber::init(Gtk::Box *container){
 
     gtk_widget_set_parent(GTK_WIDGET(popover.gobj()), GTK_WIDGET(button.gobj()));
 
-    // auto scroll_gesture = Gtk::EventControllerScroll::create();
-    // scroll_gesture->signal_scroll().connect([=] (double dx, double dy)
-    // {
-    //     int change = 0;
-    //     if (scroll_gesture->get_unit() == Gdk::ScrollUnit::WHEEL)
-    //     {
-    //         // +- number of clicks.
-    //         change = dy * max_norm * scroll_sensitivity;
-    //     } else
-    //     {
-    //         // Number of pixels expected to have scrolled. usually in 100s
-    //         change = (dy / 100.0) * max_norm * scroll_sensitivity;
-    //     }
+    auto scroll_gesture = Gtk::EventControllerScroll::create();
+    scroll_gesture->signal_scroll().connect([=] (double dx, double dy)
+    {
+        if (!face) return false; // no face means we have nothing to change by scrolling
+        std::cout << "Scrolling, dy : " << dy << ", dx : " << dx << ", scroll_sensitivity : " << scroll_sensitivity << ", source value : " << face->get_scale_target_value() << "\n";
+        dy = dy * -1; // for the same scrolling as volume widget, which we will agree it is more intuitive for more people. TODO : make this configurable
+        double change = 0;
+        if (scroll_gesture->get_unit() == Gdk::ScrollUnit::WHEEL)
+        {
+            std::cout << "here\n";
+            // +- number of clicks.
+            change = (dy * scroll_sensitivity) / 10;
+        } else
+        {
+            std::cout << "there\n";
+            // Number of pixels expected to have scrolled. usually in 100s
+            change = (dy * scroll_sensitivity) / 100;
+        }
+        std::cout << "everywhere ; change : " << change << "\n";
+        guint32 id = wp_proxy_get_bound_id(WP_PROXY(face->object));
+        GVariantBuilder gvb = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
+        g_variant_builder_add(&gvb, "{sv}", "volume", g_variant_new_double(std::pow(face->get_scale_target_value() + change, 3))); // see line x
+        GVariant* v = g_variant_builder_end(&gvb);
+        gboolean res FALSE;
+        g_signal_emit_by_name(WpCommon::mixer_api, "set-volume", id, v, &res);
+        if (!res){
 
-    //     set_volume(std::clamp(volume_scale.get_target_value() - change,
-    //         0.0, max_norm));
-    //     return true;
-    // }, true);
-    // scroll_gesture->set_flags(Gtk::EventControllerScroll::Flags::VERTICAL);
-    // button.add_controller(scroll_gesture);
+        }
+        return true;
+    }, true);
+    scroll_gesture->set_flags(Gtk::EventControllerScroll::Flags::VERTICAL);
+    button.add_controller(scroll_gesture);
 
     // boxes hierarchy and labeling
     Gtk::Orientation r1, r2;
@@ -242,7 +255,7 @@ void WayfireWireplumber::init(Gtk::Box *container){
     popover.set_autohide(false);
     popover.set_child(master_box);
     popover.get_style_context()->add_class("volume-popover");
-    // popover.add_controller(scroll_gesture);
+    popover.add_controller(scroll_gesture);
 
     /* Setup layout */
     container->append(button);
@@ -438,6 +451,11 @@ void WpCommon::on_mixer_changed(gpointer mixer, guint id, gpointer widget)
 
     control->set_btn_status_no_callbk(mute);
     control->set_scale_target_value(std::cbrt(volume)); // see line x
+
+    if (wdg->popover.is_visible() && (wdg->popover.get_child() == (Gtk::Widget*)&(wdg->master_box))){
+        // if the popover is already visible and showing the full mixer, stop there
+        return;
+    }
 
     if (control->object != ((WfWpControl*)(wdg->popover.get_child()))->object){
         wdg->face = control->copy();
