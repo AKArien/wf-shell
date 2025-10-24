@@ -140,6 +140,25 @@ WfWpControl* WfWpControl::copy(){
     return copy;
 }
 
+WfWpControlStream::WfWpControlStream(WpPipewireObject* obj, WayfireWireplumber* parent_widget) : WfWpControl(obj, parent_widget){
+    // for streams, we determine what sink they go to
+
+
+}
+
+void WfWpControlStream::refresh_special(){
+
+}
+
+WfWpControlDevice::WfWpControlDevice(WpPipewireObject* obj, WayfireWireplumber* parent_widget) : WfWpControl(obj, parent_widget){
+    // for devices (sinks and sources), we determine if they are the default
+
+}
+
+void WfWpControlDevice::refresh_special(){
+
+}
+
 bool WayfireWireplumber::on_popover_timeout(int timer)
 {
     popover_timeout.disconnect();
@@ -387,22 +406,24 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
         - for streams, which sink they go to
     */
     Gtk::Box* which_box;
+    WfWpControl* control;
     const gchar* type = wp_pipewire_object_get_property(obj, PW_KEY_MEDIA_CLASS);
     if (g_strcmp0(type, "Audio/Sink") == 0){
         which_box = &(((WayfireWireplumber*)widget)->sinks_box);
+        control = new WfWpControlDevice(obj, (WayfireWireplumber*)widget);
     }
     else if (g_strcmp0(type, "Audio/Source") == 0){
         which_box = &(((WayfireWireplumber*)widget)->sources_box);
+        control = new WfWpControlDevice(obj, (WayfireWireplumber*)widget);
     }
     else if (g_strcmp0(type, "Stream/Output/Audio") == 0){
         which_box = &(((WayfireWireplumber*)widget)->streams_box);
+        control = new WfWpControlStream(obj, (WayfireWireplumber*)widget);
     }
     else {
         std::cout << "Could not match pipewire object media class, ignoring\n";
         return;
     }
-
-    WfWpControl* control = new WfWpControl(obj, (WayfireWireplumber*)widget);
 
     ((WayfireWireplumber*)widget)->objects_to_controls.insert({obj, control});
 

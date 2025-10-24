@@ -2,6 +2,7 @@
 #define WIDGETS_PIPEWIRE_HPP
 
 #include "../widget.hpp"
+#include "gtkmm/dropdown.h"
 #include "gtkmm/togglebutton.h"
 #include "wf-popover.hpp"
 #include "wp/proxy-interfaces.h"
@@ -31,7 +32,31 @@ class WfWpControl : public Gtk::Grid{
 		void set_scale_target_value(double volume);
 		double get_scale_target_value();
 		bool is_muted();
+
+		virtual void refresh_special();
+
 		WfWpControl* copy();
+};
+
+class WfWpControlStream : public WfWpControl{
+	private:
+		Gtk::DropDown output_selector;
+		WfWpControl* output;
+
+	public:
+		WfWpControlStream(WpPipewireObject* obj, WayfireWireplumber* parent_widget);
+		void refresh_special();
+};
+
+// sinks and sources
+class WfWpControlDevice : public WfWpControl{
+	private:
+		Gtk::ToggleButton is_default;
+		// * port;
+
+	public:
+		WfWpControlDevice(WpPipewireObject* obj, WayfireWireplumber* parent_widget);
+		void refresh_special();
 };
 
 class wayfire_config;
@@ -94,6 +119,8 @@ namespace WpCommon{
 	static void init_wp(WayfireWireplumber& widget);
 	static void on_plugin_loaded(WpCore* core, GAsyncResult* res, void* data);
 	static void on_om_installed(WpObjectManager* manager, gpointer widget);
+	static void update_all_control_streams_outputs();
+	static void update_all_control_device_default_status();
 	static void on_object_added(WpObjectManager* manager, gpointer object, gpointer widget);
 	static void on_mixer_changed(gpointer mixer, guint id, gpointer widget);
 	static void on_object_removed(WpObjectManager* manager, gpointer node, gpointer widget);
