@@ -48,9 +48,10 @@ static VolumeLevel volume_icon_for(double volume){
     return VOLUME_LEVEL_OOR;
 }
 
-WfWpControl::WfWpControl(WpPipewireObject* obj){
+WfWpControl::WfWpControl(WpPipewireObject* obj, WayfireWireplumber* parent_widget){
 
     object = obj;
+    parent = parent_widget;
 
     guint32 id = wp_proxy_get_bound_id(WP_PROXY(object));
 
@@ -85,9 +86,6 @@ WfWpControl::WfWpControl(WpPipewireObject* obj){
             GVariant* v = g_variant_builder_end(&gvb);
             gboolean res FALSE;
             g_signal_emit_by_name(WpCommon::mixer_api, "set-volume", id, v, &res);
-            if (!res){
-
-            }
         }
     );
 
@@ -98,15 +96,12 @@ WfWpControl::WfWpControl(WpPipewireObject* obj){
             GVariant* v = g_variant_builder_end(&gvb);
             gboolean res FALSE;
             g_signal_emit_by_name(WpCommon::mixer_api, "set-volume", id, v, &res);
-            if (!res){
-
-            }
         }
 	);
 
 	scale.signal_state_flags_changed().connect(
 	    [=](Gtk::StateFlags){
-            // ((WayfireWireplumber*)widget)->check_set_popover_timeout();
+            parent->check_set_popover_timeout();
 		}
 	);
 
@@ -122,7 +117,6 @@ WfWpControl::WfWpControl(WpPipewireObject* obj){
     g_variant_lookup(v, "volume", "d", &volume);
     g_variant_lookup(v, "mute", "b", &mute);
     g_clear_pointer(&v, g_variant_unref);
-    std::cout << "volume : " << volume << ", mute : " << mute << "\n";
     set_btn_status_no_callbk(mute);
     set_scale_target_value(std::cbrt(volume)); // see line x
 }
@@ -146,13 +140,13 @@ bool WfWpControl::is_muted(){
 }
 
 WfWpControl* WfWpControl::copy(){
-    WfWpControl* copy = new WfWpControl(object);
+    WfWpControl* copy = new WfWpControl(object, parent);
     return copy;
 }
 
 bool WayfireWireplumber::on_popover_timeout(int timer)
 {
-    popover.popdown();
+    popover->popdown();
     return false;
 }
 
@@ -167,47 +161,39 @@ void WayfireWireplumber::check_set_popover_timeout()
 void WayfireWireplumber::init(Gtk::Box *container){
     // sets up the « widget part »
 
-    /* Setup button */
-    button.signal_clicked().connect([=]
-    {
-        if (!popover.is_visible())
-        {
-            popover.popup();
-            popover.set_child(master_box);
-            return;
+    button = std::make_unique<WayfireMenuButton>("panel");
+    button->get_style_context()->add_class("volume");
+    button->get_style_context()->add_class("flat");
+    button->set_child(main_image);
+    button->show();
+    button->get_popover()->set_child(master_box);
+    popover = button->get_popover();
+    popover->signal_closed().connect(
+        [=]{
+            popover->set_child(master_box);
+            if (!popover->is_visible())
+            {
+                popover->popdown();
+                return;
+            }
         }
-        if (popover.get_child() != (Gtk::Widget*)(&master_box)){
-            // if the popover was a single control, switch it to the full mixer and stay deployed
-            popover.set_child(master_box);
-            return;
-        }
-        popover.popdown();
-    });
-    auto style = button.get_style_context();
-    style->add_class("volume");
-    style->add_class("flat");
-
-    gtk_widget_set_parent(GTK_WIDGET(popover.gobj()), GTK_WIDGET(button.gobj()));
+    );
 
     auto scroll_gesture = Gtk::EventControllerScroll::create();
     scroll_gesture->signal_scroll().connect([=] (double dx, double dy)
     {
         if (!face) return false; // no face means we have nothing to change by scrolling
-        std::cout << "Scrolling, dy : " << dy << ", dx : " << dx << ", scroll_sensitivity : " << scroll_sensitivity << ", source value : " << face->get_scale_target_value() << "\n";
         dy = dy * -1; // for the same scrolling as volume widget, which we will agree it is more intuitive for more people. TODO : make this configurable
         double change = 0;
         if (scroll_gesture->get_unit() == Gdk::ScrollUnit::WHEEL)
         {
-            std::cout << "here\n";
             // +- number of clicks.
             change = (dy * scroll_sensitivity) / 10;
         } else
         {
-            std::cout << "there\n";
             // Number of pixels expected to have scrolled. usually in 100s
             change = (dy * scroll_sensitivity) / 100;
         }
-        std::cout << "everywhere ; change : " << change << "\n";
         guint32 id = wp_proxy_get_bound_id(WP_PROXY(face->object));
         GVariantBuilder gvb = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
         g_variant_builder_add(&gvb, "{sv}", "volume", g_variant_new_double(std::pow(face->get_scale_target_value() + change, 3))); // see line x
@@ -220,7 +206,7 @@ void WayfireWireplumber::init(Gtk::Box *container){
         return true;
     }, true);
     scroll_gesture->set_flags(Gtk::EventControllerScroll::Flags::VERTICAL);
-    button.add_controller(scroll_gesture);
+    button->add_controller(scroll_gesture);
 
     // boxes hierarchy and labeling
     Gtk::Orientation r1, r2;
@@ -252,14 +238,14 @@ void WayfireWireplumber::init(Gtk::Box *container){
     streams_box.append(*new Gtk::Separator(r2));
 
     /* Setup popover */
-    popover.set_autohide(false);
-    popover.set_child(master_box);
-    popover.get_style_context()->add_class("volume-popover");
-    popover.add_controller(scroll_gesture);
+    // popover->set_autohide(false);
+    popover->set_child(master_box);
+    popover->get_style_context()->add_class("volume-popover");
+    popover->add_controller(scroll_gesture);
 
     /* Setup layout */
-    container->append(button);
-    button.set_child(main_image);
+    container->append(*button);
+    button->set_child(main_image);
 
 	WpCommon::init_wp(*this);
 }
@@ -415,15 +401,14 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
         return;
     }
 
-    WfWpControl* control = new WfWpControl(obj);
+    WfWpControl* control = new WfWpControl(obj, (WayfireWireplumber*)widget);
 
     ((WayfireWireplumber*)widget)->objects_to_controls.insert({obj, control});
 
 	which_box->append((Gtk::Widget&)*control);
 }
 
-void WpCommon::on_mixer_changed(gpointer mixer, guint id, gpointer widget)
-{
+void WpCommon::on_mixer_changed(gpointer mixer, guint id, gpointer widget){
     GVariant* v = NULL;
     // ask the mixer-api for the up-to-date data
     g_signal_emit_by_name(WpCommon::mixer_api, "get-volume", id, &v);
@@ -452,32 +437,29 @@ void WpCommon::on_mixer_changed(gpointer mixer, guint id, gpointer widget)
     control->set_btn_status_no_callbk(mute);
     control->set_scale_target_value(std::cbrt(volume)); // see line x
 
-    if (wdg->popover.is_visible() && (wdg->popover.get_child() == (Gtk::Widget*)&(wdg->master_box))){
-        // if the popover is already visible and showing the full mixer, stop there
-        return;
-    }
+    if (!wdg->popover->is_visible() && control->object
+        !=
+        ((WfWpControl*)(wdg->popover->get_child()))->object
+    ){
+        // don’t do this if the popover is already visible and showing something else
 
-    if (control->object != ((WfWpControl*)(wdg->popover.get_child()))->object){
         wdg->face = control->copy();
-        wdg->popover.set_child(*wdg->face);
+        wdg->popover->set_child(*wdg->face);
+
     }
 
-    // this feels a bit ugly, but it’s probably alright
     wdg->face->set_btn_status_no_callbk(mute);
     wdg->face->set_scale_target_value(std::cbrt(volume)); // see line x
 
-    if (!wdg->popover.is_visible()){
-        wdg->popover.popup();
+    if (!wdg->popover->is_visible()){
+        wdg->popover->popup();
     }
-    else {
-        wdg->check_set_popover_timeout();
-    }
+    wdg->check_set_popover_timeout();
 
     wdg->update_icon();
 }
 
 void WpCommon::on_object_removed(WpObjectManager* manager, gpointer object, gpointer widget){
-
     WayfireWireplumber* wdg = (WayfireWireplumber*)widget;
     auto it = wdg->objects_to_controls.find((WpPipewireObject*)object);
     if (it == wdg->objects_to_controls.end()){
@@ -493,6 +475,6 @@ void WpCommon::on_object_removed(WpObjectManager* manager, gpointer object, gpoi
 }
 
 WayfireWireplumber::~WayfireWireplumber(){
-	gtk_widget_unparent(GTK_WIDGET(popover.gobj()));
+	gtk_widget_unparent(GTK_WIDGET(popover->gobj()));
 	popover_timeout.disconnect();
 }

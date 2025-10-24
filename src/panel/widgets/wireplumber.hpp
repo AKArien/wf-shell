@@ -13,6 +13,8 @@ extern "C" {
 #include <wayfire/util/duration.hpp>
 #include <map>
 
+class WayfireWireplumber;
+
 class WfWpControl : public Gtk::Grid{
 	// Custom grid with extra methods and data to facilitate handling
 	private:
@@ -20,9 +22,10 @@ class WfWpControl : public Gtk::Grid{
 		Gtk::Label label;
 		Gtk::ToggleButton button;
 		sigc::connection mute_conn;
+		WayfireWireplumber* parent;
 
 	public:
-		WfWpControl(WpPipewireObject* obj);
+		WfWpControl(WpPipewireObject* obj, WayfireWireplumber* parent_widget);
 		WpPipewireObject* object;
 		void set_btn_status_no_callbk(bool state);
 		void set_scale_target_value(double volume);
@@ -34,7 +37,7 @@ class WfWpControl : public Gtk::Grid{
 class wayfire_config;
 class WayfireWireplumber : public WayfireWidget{
 	Gtk::Image main_image;
-	Gtk::Button button;
+   std::unique_ptr<WayfireMenuButton> button;
 
 	WfOption<double> timeout{"panel/volume_display_timeout"};
 	WfOption<double> scroll_sensitivity{"panel/volume_scroll_sensitivity"};
@@ -66,7 +69,7 @@ class WayfireWireplumber : public WayfireWidget{
 		void init(Gtk::Box *container) override;
 		virtual ~WayfireWireplumber();
 
-		Gtk::Popover popover;
+		Gtk::Popover* popover;
 
 		/*
 			the « face » is the representation of the audio channel that shows it’s
