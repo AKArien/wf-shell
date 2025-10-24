@@ -37,13 +37,11 @@ class WfWpControl : public Gtk::Grid{
 class wayfire_config;
 class WayfireWireplumber : public WayfireWidget{
 	Gtk::Image main_image;
-   std::unique_ptr<WayfireMenuButton> button;
+  std::unique_ptr<WayfireMenuButton> button;
 
 	WfOption<double> timeout{"panel/volume_display_timeout"};
 	WfOption<double> scroll_sensitivity{"panel/volume_scroll_sensitivity"};
 
-	// void on_volume_scroll(GdkEventScroll *event);
-	// void on_volume_button_press(GdkEventButton *event);
 	void on_volume_value_changed();
 	bool on_popover_timeout(int timer);
 
@@ -52,18 +50,6 @@ class WayfireWireplumber : public WayfireWidget{
 	gulong notify_default_sink_changed = 0;
 	sigc::connection popover_timeout;
 	sigc::connection volume_changed_signal;
-
-	enum set_volume_flags_t
-	{
-		/* Neither show popover nor update volume */
-		VOLUME_FLAG_NO_ACTION    = 0,
-		/* Show volume popover */
-		VOLUME_FLAG_SHOW_POPOVER = 1,
-		/* Update real volume with GVC */
-		VOLUME_FLAG_UPDATE_GVC   = 2,
-		/* Both of the above */
-		VOLUME_FLAG_FULL         = 3,
-	};
 
 	public:
 		void init(Gtk::Box *container) override;
@@ -86,14 +72,11 @@ class WayfireWireplumber : public WayfireWidget{
 		// to keep track of which control is associated with which node
 		std::map<WpPipewireObject*, WfWpControl*> objects_to_controls;
 
-		/** Update the icon based on volume and muted state */
+		/** Update the icon based on volume and muted state of the face widget */
 		void update_icon();
 
 		/** Called when the volume changed from outside of the widget */
 		void on_volume_changed_external();
-
-		/** Called when the default sink changes */
-		void on_default_sink_changed();
 
 		/**
 		* Check whether the popover should be auto-hidden, and if yes, start
@@ -112,7 +95,7 @@ namespace WpCommon{
 	static void on_plugin_loaded(WpCore* core, GAsyncResult* res, void* data);
 	static void on_om_installed(WpObjectManager* manager, gpointer widget);
 	static void on_object_added(WpObjectManager* manager, gpointer object, gpointer widget);
-	static void on_mixer_changed(gpointer mixer, guint id, gpointer widet);
+	static void on_mixer_changed(gpointer mixer, guint id, gpointer widget);
 	static void on_object_removed(WpObjectManager* manager, gpointer node, gpointer widget);
 }
 

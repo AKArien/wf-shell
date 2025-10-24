@@ -1,6 +1,5 @@
 #include <gtkmm.h>
 #include <iostream>
-#include <algorithm>
 #include <glibmm.h>
 #include "gio/gio.h"
 #include "glib-object.h"
@@ -9,8 +8,6 @@
 #include "gtkmm/label.h"
 #include "gtkmm/separator.h"
 #include "gtkmm/togglebutton.h"
-#include "launchers.hpp"
-#include "gtk-utils.hpp"
 #include "animated_scale.hpp"
 #include "widget.hpp"
 #include "wp/proxy-interfaces.h"
@@ -105,15 +102,14 @@ WfWpControl::WfWpControl(WpPipewireObject* obj, WayfireWireplumber* parent_widge
 		}
 	);
 
-    // ugly copy-paste of on_mixer_changed code, clean this
+    // initialise the values
     GVariant* v = NULL;
-    g_signal_emit_by_name(WpCommon::mixer_api, "get_volume", wp_proxy_get_bound_id(WP_PROXY(object)), &v);
-    if (!v){
-        // Object doesn’t support volume, we really shouldn’t have gotten this far in the first place
+    g_signal_emit_by_name(WpCommon::mixer_api, "get-volume", id, &v);
+    if (!v) {
         return;
     }
-    gboolean mute;
-    gdouble volume;
+    gboolean mute = FALSE;
+    gdouble volume = 0.0;
     g_variant_lookup(v, "volume", "d", &volume);
     g_variant_lookup(v, "mute", "b", &mute);
     g_clear_pointer(&v, g_variant_unref);
@@ -146,6 +142,7 @@ WfWpControl* WfWpControl::copy(){
 
 bool WayfireWireplumber::on_popover_timeout(int timer)
 {
+    popover->set_child(master_box);
     popover->popdown();
     return false;
 }
@@ -170,11 +167,10 @@ void WayfireWireplumber::init(Gtk::Box *container){
     popover = button->get_popover();
     popover->signal_closed().connect(
         [=]{
-            popover->set_child(master_box);
-            if (!popover->is_visible())
-            {
-                popover->popdown();
-                return;
+            // when the widget is clicked during the « small » popup, replace by full mixer
+            if (popover->get_child() != (Gtk::Widget*)&master_box){
+                popover->popup();
+                popover->set_child(master_box);
             }
         }
     );
@@ -200,9 +196,6 @@ void WayfireWireplumber::init(Gtk::Box *container){
         GVariant* v = g_variant_builder_end(&gvb);
         gboolean res FALSE;
         g_signal_emit_by_name(WpCommon::mixer_api, "set-volume", id, v, &res);
-        if (!res){
-
-        }
         return true;
     }, true);
     scroll_gesture->set_flags(Gtk::EventControllerScroll::Flags::VERTICAL);
@@ -219,7 +212,6 @@ void WayfireWireplumber::init(Gtk::Box *container){
         r1 = Gtk::Orientation::VERTICAL;
         r2 = Gtk::Orientation::HORIZONTAL;
     }
-    // Gtk::Box* master_box = new eeeGtk::Box(r1);
     master_box.set_orientation(r1);
     // TODO : only show the boxes which have stuff in them
     master_box.append(sinks_box);
@@ -238,7 +230,6 @@ void WayfireWireplumber::init(Gtk::Box *container){
     streams_box.append(*new Gtk::Separator(r2));
 
     /* Setup popover */
-    // popover->set_autohide(false);
     popover->set_child(master_box);
     popover->get_style_context()->add_class("volume-popover");
     popover->add_controller(scroll_gesture);
@@ -284,7 +275,7 @@ void WpCommon::init_wp(WayfireWireplumber& widget){
     	    G_CALLBACK(on_object_added),
     	    &widget
     	);
-        // catch up to object already registered by the manager
+        // catch up to objects already registered by the manager
         WpIterator* reg_objs = wp_object_manager_new_iterator(object_manager);
         GValue item = G_VALUE_INIT;
         while (wp_iterator_next(reg_objs, &item)){
@@ -299,7 +290,7 @@ void WpCommon::init_wp(WayfireWireplumber& widget){
 	core = wp_core_new(NULL, NULL, NULL);
 	object_manager = wp_object_manager_new();
 
-	// sinks, sources and streams
+	// register interests in  sinks, sources and streams
 	WpObjectInterest* sink_interest = wp_object_interest_new_type(WP_TYPE_NODE);
 	wp_object_interest_add_constraint(
 	    sink_interest,
@@ -336,7 +327,7 @@ void WpCommon::init_wp(WayfireWireplumber& widget){
         core,
         "libwireplumber-module-mixer-api",
         "module",
-        wp_spa_json_new_from_string("{\"scale\": 0}"),
+        NULL,
         NULL,
         NULL,
         (GAsyncReadyCallback)on_plugin_loaded,
@@ -350,8 +341,9 @@ void WpCommon::on_plugin_loaded(WpCore* core, GAsyncResult* res, void* widget){
     mixer_api = wp_plugin_find(core, "mixer-api");
     // as far as i understand, this should set the mixer api to use linear scale
     // however, it doesn’t and i can’t find what is wrong.
-    // until somesone figures it out, we calculate ourselves on lines 97 and 369
+    // for now, we calculate manually
     // g_object_set(mixer_api, "scale", 0, NULL); // set to linear
+
     g_signal_connect(
         mixer_api,
         "changed",
@@ -377,7 +369,7 @@ void WpCommon::on_plugin_loaded(WpCore* core, GAsyncResult* res, void* widget){
 }
 
 void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpointer widget){
-    // makes a new widget and handles signals and callbacks for the new object
+    // adds a new widget to the appropriate section
 
     WpPipewireObject* obj = (WpPipewireObject*)object;
 
@@ -409,6 +401,8 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
 }
 
 void WpCommon::on_mixer_changed(gpointer mixer, guint id, gpointer widget){
+    // update the visual of the appropriate WfWpControl according to external changes
+
     GVariant* v = NULL;
     // ask the mixer-api for the up-to-date data
     g_signal_emit_by_name(WpCommon::mixer_api, "get-volume", id, &v);
