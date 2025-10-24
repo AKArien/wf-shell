@@ -142,6 +142,12 @@ WfWpControl* WfWpControl::copy(){
 
 bool WayfireWireplumber::on_popover_timeout(int timer)
 {
+    popover_timeout.disconnect();
+    std::cout << "there\n";
+    // if the popover child is the master box and there is a popover timeut timer,
+    // it means that the popover was closed manually, and thus replaced by the mixer
+    if (popover->get_child() == (Gtk::Widget*)&master_box) return true;
+    std::cout << "everywhere\n";
     popover->set_child(master_box);
     popover->popdown();
     return false;
@@ -167,10 +173,13 @@ void WayfireWireplumber::init(Gtk::Box *container){
     popover = button->get_popover();
     popover->signal_closed().connect(
         [=]{
+            std::cout << "here\n";
             // when the widget is clicked during the « small » popup, replace by full mixer
+            // if the popover child is the master box, it was already closed and we don’t interfere
             if (popover->get_child() != (Gtk::Widget*)&master_box){
-                popover->popup();
                 popover->set_child(master_box);
+                // this causes a small delay, but is the simplest way. could be made to look better
+                button->activate();
             }
         }
     );
@@ -436,10 +445,8 @@ void WpCommon::on_mixer_changed(gpointer mixer, guint id, gpointer widget){
         ((WfWpControl*)(wdg->popover->get_child()))->object
     ){
         // don’t do this if the popover is already visible and showing something else
-
         wdg->face = control->copy();
         wdg->popover->set_child(*wdg->face);
-
     }
 
     wdg->face->set_btn_status_no_callbk(mute);
