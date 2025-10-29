@@ -6,6 +6,7 @@ this fork is for development of (hopefully) additions to wf-shell. Current chang
 - clarified `autohide_delay` description (a more suitable name would probably be autohide_time ?)
 - the panel can be made to not span the whole side (like the gnome dock, or the similar kde option)
 - the panel and dock can be attached to the left or right of the screen
+- a full audio mixer widget for wireplumber
 - added structure config in WayfireWidget, containing static members for getting global widget configuration (probably mostly for orientation)
 
 Current (new) problems are :
@@ -15,9 +16,8 @@ Current (new) problems are :
 - there’s probably some cleaning up to do in the code ! changes were quite hacked on so far.
 
 features i want to add :
-- all the stuff that i’ve added to the config metadata files but not implemented
 - multiple layers of widgets on wf-panel
-- new widgets ! one to control display brightness and an advanced pipewire audio control
+- a widget to control display brightness
 
 # wf-shell
 
