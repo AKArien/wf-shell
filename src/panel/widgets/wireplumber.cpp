@@ -164,6 +164,9 @@ WfWpControlStream::WfWpControlStream(WpPipewireObject* obj, WayfireWireplumber* 
 
     parent->streams_controls.push_back(this);
 
+    attach(output_selector, 1, 0, 1, 1);
+    output_selector.set_model(potential_outputs_names);
+
     // force selection of the correct output
     verify_current_output();
 }
@@ -174,7 +177,11 @@ void WfWpControlStream::register_potential_output(guint32 id){
 }
 
 void WfWpControlStream::remove_potential_output(guint32 id){
-    potential_outputs_names->remove(potential_outputs_names->find(parent->sinks_to_names.find(id)->second));
+    Glib::ustring name;
+    guint index;
+    name = parent->sinks_to_names.find(id)->second;
+    index = potential_outputs_names->find(name);
+    potential_outputs_names->remove(index);
     verify_current_output();
 }
 
@@ -204,6 +211,7 @@ WfWpControlStream::~WfWpControlStream(){
 
 WfWpControlDevice::WfWpControlDevice(WpPipewireObject* obj, WayfireWireplumber* parent_widget) : WfWpControl(obj, parent_widget){
     // for devices (sinks and sources), we determine if they are the default
+
     attach(default_btn, 1, 0, 1, 1);
 
     WpProxy* proxy = WP_PROXY(object);
@@ -675,16 +683,20 @@ void WpCommon::on_object_removed(WpObjectManager* manager, gpointer object, gpoi
     delete control;
     wdg->objects_to_controls.erase((WpPipewireObject*)object);
 
+
     guint32 id = wp_proxy_get_bound_id(WP_PROXY((WpPipewireObject*)object));
     for (auto stream : wdg->streams_controls){
         stream->remove_potential_output(id);
     }
 
-    if (wdg->sinks_to_names.find(id) == wdg->sinks_to_names.end()){
-        wdg->sinks_to_names.erase(id);
+    // erase from sinks_to_names / sources_to_names only if present
+    auto sit = wdg->sinks_to_names.find(id);
+    if (sit != wdg->sinks_to_names.end()) {
+        wdg->sinks_to_names.erase(sit);
     }
-    if (wdg->sources_to_names.find(id) == wdg->sources_to_names.end()){
-        wdg->sources_to_names.erase(id);
+    auto srcit = wdg->sources_to_names.find(id);
+    if (srcit != wdg->sources_to_names.end()) {
+        wdg->sources_to_names.erase(srcit);
     }
 }
 
