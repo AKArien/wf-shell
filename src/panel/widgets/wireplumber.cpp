@@ -129,9 +129,9 @@ Glib::ustring WfWpControl::get_name(){
 }
 
 void WfWpControl::set_btn_status_no_callbk(bool state){
-    mute_conn.block();
+    mute_conn.block(true);
     button.set_active(state);
-    mute_conn.unblock();
+    mute_conn.block(false);
 }
 
 void WfWpControl::set_scale_target_value(double volume){
@@ -213,18 +213,19 @@ WfWpControlDevice::WfWpControlDevice(WpPipewireObject* obj, WayfireWireplumber* 
                 PW_KEY_MEDIA_CLASS
             );
             for (guint i = 0; i < G_N_ELEMENTS(DEFAULT_NODE_MEDIA_CLASSES); i++) {
-                if (!g_strcmp0 (media_class, DEFAULT_NODE_MEDIA_CLASSES[i])) {
-                    gboolean res = FALSE;
-                    const gchar *name = wp_pipewire_object_get_property(
-                        WP_PIPEWIRE_OBJECT(proxy),
-                        PW_KEY_NODE_NAME
-                    );
-                    if (!name) return;
-
-                    g_signal_emit_by_name (WpCommon::default_nodes_api, "set-default-configured-node-name",
-                    DEFAULT_NODE_MEDIA_CLASSES[i], name, &res);
-                    if (!res) return;
+                if (g_strcmp0(media_class, DEFAULT_NODE_MEDIA_CLASSES[i])){
+                    return;
                 }
+                gboolean res = FALSE;
+                const gchar *name = wp_pipewire_object_get_property(
+                    WP_PIPEWIRE_OBJECT(proxy),
+                    PW_KEY_NODE_NAME
+                );
+                if (!name) return;
+
+                g_signal_emit_by_name (WpCommon::default_nodes_api, "set-default-configured-node-name",
+                DEFAULT_NODE_MEDIA_CLASSES[i], name, &res);
+                if (!res) return;
 
                 wp_core_sync(WpCommon::core, NULL, NULL, NULL);
                 return;
@@ -235,9 +236,9 @@ WfWpControlDevice::WfWpControlDevice(WpPipewireObject* obj, WayfireWireplumber* 
 }
 
 void WfWpControlDevice::set_def_status_no_callbk(bool state){
-    def_conn.block();
+    def_conn.block(true);
     default_btn.set_active(state);
-    def_conn.unblock();
+    def_conn.block(false);
 }
 
 WfWpControlDevice* WfWpControlDevice::copy(){
@@ -600,11 +601,11 @@ void WpCommon::on_mixer_changed(gpointer mixer_api, guint id, gpointer widget){
     control->set_btn_status_no_callbk(mute);
     control->set_scale_target_value(std::cbrt(volume)); // see line x
 
+    // only if the popover is not already visible and showing something else
     if (!wdg->popover->is_visible() && control->object
         !=
         ((WfWpControl*)(wdg->popover->get_child()))->object
     ){
-        // don’t do this if the popover is already visible and showing something else
         wdg->face = control->copy();
         wdg->popover->set_child(*wdg->face);
     }
