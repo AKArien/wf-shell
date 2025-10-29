@@ -77,6 +77,8 @@ WfWpControl::WfWpControl(WpPipewireObject* obj, WayfireWireplumber* parent_widge
         name = "Unnamed";
     }
 
+    name = g_strdup_printf("%s %d", name, id);
+
     label.set_text(Glib::ustring(name));
 
     attach(label, 0, 0, 2, 1);
@@ -214,21 +216,20 @@ WfWpControlDevice::WfWpControlDevice(WpPipewireObject* obj, WayfireWireplumber* 
             );
             for (guint i = 0; i < G_N_ELEMENTS(DEFAULT_NODE_MEDIA_CLASSES); i++) {
                 if (g_strcmp0(media_class, DEFAULT_NODE_MEDIA_CLASSES[i])){
-                    return;
+                    continue;
                 }
                 gboolean res = FALSE;
                 const gchar *name = wp_pipewire_object_get_property(
                     WP_PIPEWIRE_OBJECT(proxy),
                     PW_KEY_NODE_NAME
                 );
-                if (!name) return;
+                if (!name) continue;
 
                 g_signal_emit_by_name (WpCommon::default_nodes_api, "set-default-configured-node-name",
                 DEFAULT_NODE_MEDIA_CLASSES[i], name, &res);
-                if (!res) return;
+                if (!res) continue;
 
                 wp_core_sync(WpCommon::core, NULL, NULL, NULL);
-                return;
             }
         }
     );
@@ -650,7 +651,7 @@ void WpCommon::on_default_nodes_changed(gpointer default_nodes_api, gpointer wid
         }
 
         // if the control is not for a sink or source (non WfWpControlDevice), don’t try to set status
-        bool in_sinks   = wdg->sinks_to_names.find(bound_id) != wdg->sinks_to_names.end();
+        bool in_sinks = wdg->sinks_to_names.find(bound_id) != wdg->sinks_to_names.end();
         bool in_sources = wdg->sources_to_names.find(bound_id) != wdg->sources_to_names.end();
 
         if (in_sinks || in_sources) {
