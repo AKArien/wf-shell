@@ -13,6 +13,7 @@
 #include "wp/defs.h"
 #include "wp/proxy-interfaces.h"
 #include "wp/proxy.h"
+#include "wp/spa-pod.h"
 
 #include <pipewire/keys.h>
 
@@ -167,8 +168,28 @@ WfWpControlStream::WfWpControlStream(WpPipewireObject* obj, WayfireWireplumber* 
     attach(output_selector, 1, 0, 1, 1);
     output_selector.set_model(potential_outputs_names);
 
+    output_selector.connect_property_changed("selected-item", [this](){
+        guint32 id = id_from_name(potential_outputs_names->get_string(output_selector.get_selected()));
+        WpSpaPodBuilder* builder = wp_spa_pod_builder_new_object("Spa:Pod:Object:Param:Props", "Props");
+        wp_spa_pod_builder_add_property(builder, "target.object");
+        wp_spa_pod_builder_add_int(builder, id);
+        WpSpaPod* pod = wp_spa_pod_builder_end(builder);
+
+        wp_pipewire_object_set_param(object, "Props", 0, pod);
+
+    });
+
     // force selection of the correct output
     verify_current_output();
+}
+
+guint32 WfWpControlStream::id_from_name(Glib::ustring name_s){
+    for (auto [id, name] : parent->sinks_to_names){
+        if (name.compare(name_s) == 0){
+            return id;
+        }
+    }
+    return 0;
 }
 
 void WfWpControlStream::register_potential_output(guint32 id){

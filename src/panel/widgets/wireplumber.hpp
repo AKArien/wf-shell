@@ -42,6 +42,7 @@ class WfWpControlStream : public WfWpControl{
         Gtk::DropDown output_selector;
         std::shared_ptr<Gtk::StringList> potential_outputs_names; // the cleaner way would be to make a custom GtkListItemFactory, but doing this would appear to be way, way simpler
         WfWpControl* output;
+        guint32 id_from_name(Glib::ustring name_s);
 
     public:
         WfWpControlStream(WpPipewireObject* obj, WayfireWireplumber* parent_widget);
