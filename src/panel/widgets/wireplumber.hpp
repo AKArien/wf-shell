@@ -2,7 +2,6 @@
 #define WIDGETS_PIPEWIRE_HPP
 
 #include "../widget.hpp"
-#include "gtkmm/dropdown.h"
 #include "gtkmm/togglebutton.h"
 #include "wf-popover.hpp"
 #include "wp/proxy-interfaces.h"
@@ -58,7 +57,7 @@ class wayfire_config;
 class WayfireWireplumber : public WayfireWidget{
     private:
         Gtk::Image main_image;
-        std::unique_ptr<WayfireMenuButton> button;
+        // std::unique_ptr<WayfireMenuButton> button;
 
         WfOption<double> timeout{"panel/volume_display_timeout"};
         WfOption<double> scroll_sensitivity{"panel/volume_scroll_sensitivity"};
@@ -75,6 +74,7 @@ class WayfireWireplumber : public WayfireWidget{
     public:
         void init(Gtk::Box *container) override;
         virtual ~WayfireWireplumber();
+        std::unique_ptr<WayfireMenuButton> button;
 
         Gtk::Popover* popover;
 
@@ -82,8 +82,7 @@ class WayfireWireplumber : public WayfireWidget{
             the « face » is the representation of the audio channel that shows it’s
             volume level on the widget icon and is concerned by the quick actions.
             currently, it is the last channel to have been updated.
-            we have the whole grid to show all the info in the popup upon updates
-            TODO : make this configurable, other ideas : default source/sink
+            TODO : make this configurable, other ideas : default source/sink. Pinning ?
         */
         WfWpControl* face;
 
@@ -111,15 +110,18 @@ namespace WpCommon{
     static WpPlugin* mixer_api;
     static WpPlugin* default_nodes_api;
 
-    static void init_wp(WayfireWireplumber& widget);
+    // std::vector<WayfireWireplumber*> widgets;
+
+    static void init_wp();
+    static void catch_up_to_current_state(WayfireWireplumber* widget);
     static void on_mixer_plugin_loaded(WpCore* core, GAsyncResult* res, gpointer data);
     static void on_default_nodes_plugin_loaded(WpCore* core, GAsyncResult* res, gpointer data);
-    static void on_all_plugins_loaded(WpCore* core,gpointer data);
-    static void on_om_installed(WpObjectManager* manager, gpointer widget);
-    static void on_object_added(WpObjectManager* manager, gpointer object, gpointer widget);
-    static void on_mixer_changed(gpointer mixer_api, guint id, gpointer widget);
-    static void on_default_nodes_changed(gpointer default_nodes_api, gpointer widget);
-    static void on_object_removed(WpObjectManager* manager, gpointer node, gpointer widget);
+    static void on_all_plugins_loaded();
+    static void on_om_installed(WpObjectManager* manager, gpointer data);
+    static void on_object_added(WpObjectManager* manager, gpointer object, gpointer data);
+    static void on_mixer_changed(gpointer mixer_api, guint id, gpointer data);
+    static void on_default_nodes_changed(gpointer default_nodes_api, gpointer data);
+    static void on_object_removed(WpObjectManager* manager, gpointer node, gpointer data);
 }
 
 #endif // WIDGETS_PIPEWIRE_HPP

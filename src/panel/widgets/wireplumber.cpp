@@ -18,6 +18,13 @@
 
 #include "wireplumber.hpp"
 
+namespace WpCommon {
+std::vector<WayfireWireplumber*> widgets;
+
+}
+
+
+
 enum VolumeLevel
 {
     VOLUME_LEVEL_MUTE = 0,
@@ -229,10 +236,6 @@ WfWpControlDevice* WfWpControlDevice::copy(){
 bool WayfireWireplumber::on_popover_timeout(int timer)
 {
     popover_timeout.disconnect();
-    // if the popover child is the master box and there is a popover timeut timer,
-    // it means that the popover was closed manually, and thus replaced by the mixer
-    if (popover->get_child() == (Gtk::Widget*)&master_box) return true;
-    popover->set_child(master_box);
     popover->popdown();
     return false;
 }
@@ -255,17 +258,20 @@ void WayfireWireplumber::init(Gtk::Box *container){
     button->show();
     button->get_popover()->set_child(master_box);
     popover = button->get_popover();
-    popover->signal_closed().connect(
-        [=]{
+    popover->set_autohide(true);
+    // popover->signal_closed().connect(
+        // [=]{
+
+
             // when the widget is clicked during the « small » popup, replace by full mixer
             // if the popover child is the master box, it was already closed and we don’t interfere
-            if (popover->get_child() != (Gtk::Widget*)&master_box){
-                popover->set_child(master_box);
+            // if (popover->get_child() != (Gtk::Widget*)&master_box){
+                // popover->set_child(master_box);
                 // this causes a small delay, but is the simplest way. could be made to look better
-                button->activate();
-            }
-        }
-    );
+                // button->activate();
+            // }
+        // }
+    // );
 
     auto scroll_gesture = Gtk::EventControllerScroll::create();
     scroll_gesture->signal_scroll().connect([=] (double dx, double dy)
@@ -330,7 +336,18 @@ void WayfireWireplumber::init(Gtk::Box *container){
     container->append(*button);
     button->set_child(main_image);
 
-	WpCommon::init_wp(*this);
+    /*
+        if the core is already set, we are another widget, wether on another monitor
+        or on the same wf-panel. We re-use the core, manager and all other objects
+    */
+
+    WpCommon::widgets.push_back(this);
+
+    if (WpCommon::core != nullptr){
+        WpCommon::catch_up_to_current_state(this);
+        return;
+    }
+	WpCommon::init_wp();
 }
 
 void WayfireWireplumber::update_icon()
@@ -353,89 +370,46 @@ void WayfireWireplumber::update_icon()
     main_image.set_from_icon_name(icon_name_from_state.at(current));
 }
 
-void WpCommon::init_wp(WayfireWireplumber& widget){
+void WpCommon::init_wp(){
     // creates the core, object interests and connects signals
-
-    /*
-        if the core is already set, we are another widget, wether on another monitor
-        or on the same wf-panel. We re-use the core, manager and all other objects
-    */
-    if (core != nullptr){
-        g_signal_connect(
-            mixer_api,
-            "changed",
-            G_CALLBACK(WpCommon::on_mixer_changed),
-            &widget
-        );
-
-        g_signal_connect(
-            default_nodes_api,
-            "changed",
-            G_CALLBACK(WpCommon::on_default_nodes_changed),
-            &widget
-        );
-
-        g_signal_connect(
-            object_manager,
-            "object_added",
-            G_CALLBACK(on_object_added),
-            &widget
-        );
-
-        g_signal_connect(
-            object_manager,
-            "object-removed",
-            G_CALLBACK(on_object_removed),
-            &widget
-        );
-
-        // catch up to objects already registered by the manager
-        WpIterator* reg_objs = wp_object_manager_new_iterator(object_manager);
-        GValue item = G_VALUE_INIT;
-        while (wp_iterator_next(reg_objs, &item)){
-            on_object_added(object_manager, (gpointer)g_value_get_object(&item), &widget);
-            g_value_unset(&item);
-        }
-        return;
-    }
 
     std::cout << "Initialising wireplumber\n";
     wp_init(WP_INIT_PIPEWIRE);
 	core = wp_core_new(NULL, NULL, NULL);
 	object_manager = wp_object_manager_new();
 
-	// register interests in  sinks, sources and streams
-	WpObjectInterest* sink_interest = wp_object_interest_new_type(WP_TYPE_NODE);
-	wp_object_interest_add_constraint(
-	    sink_interest,
-	    WP_CONSTRAINT_TYPE_PW_PROPERTY,
-	    "media.class",
-	    WP_CONSTRAINT_VERB_EQUALS,
-	    g_variant_new_string("Audio/Sink")
-	);
+    // register interests in  sinks, sources and streams
+    WpObjectInterest* sink_interest = wp_object_interest_new_type(WP_TYPE_NODE);
+    wp_object_interest_add_constraint(
+        sink_interest,
+        WP_CONSTRAINT_TYPE_PW_PROPERTY,
+        "media.class",
+        WP_CONSTRAINT_VERB_EQUALS,
+        g_variant_new_string("Audio/Sink")
+    );
 
-	wp_object_manager_add_interest_full(object_manager, sink_interest);
+    wp_object_manager_add_interest_full(object_manager, sink_interest);
 
-	WpObjectInterest* source_interest = wp_object_interest_new_type(WP_TYPE_NODE);
-	wp_object_interest_add_constraint(
-	    source_interest,
-	    WP_CONSTRAINT_TYPE_PW_PROPERTY,
-	    "media.class",
-	    WP_CONSTRAINT_VERB_EQUALS,
-	    g_variant_new_string("Audio/Source")
-	);
+    WpObjectInterest* source_interest = wp_object_interest_new_type(WP_TYPE_NODE);
+    wp_object_interest_add_constraint(
+        source_interest,
+        WP_CONSTRAINT_TYPE_PW_PROPERTY,
+        "media.class",
+        WP_CONSTRAINT_VERB_EQUALS,
+        g_variant_new_string("Audio/Source")
+    );
 
-	wp_object_manager_add_interest_full(object_manager, source_interest);
+    wp_object_manager_add_interest_full(object_manager, source_interest);
 
-	WpObjectInterest* stream_interest = wp_object_interest_new_type(WP_TYPE_NODE);
-	wp_object_interest_add_constraint(
-	    stream_interest,
-	    WP_CONSTRAINT_TYPE_PW_PROPERTY,
-	    "media.class",
-	    WP_CONSTRAINT_VERB_EQUALS,
-	    g_variant_new_string("Stream/Output/Audio")
-	);
-	wp_object_manager_add_interest_full(object_manager, stream_interest);
+    WpObjectInterest* stream_interest = wp_object_interest_new_type(WP_TYPE_NODE);
+    wp_object_interest_add_constraint(
+        stream_interest,
+        WP_CONSTRAINT_TYPE_PW_PROPERTY,
+        "media.class",
+        WP_CONSTRAINT_VERB_EQUALS,
+        g_variant_new_string("Stream/Output/Audio")
+    );
+    wp_object_manager_add_interest_full(object_manager, stream_interest);
 
     wp_core_load_component(
         core,
@@ -445,13 +419,24 @@ void WpCommon::init_wp(WayfireWireplumber& widget){
         NULL,
         NULL,
         (GAsyncReadyCallback)on_mixer_plugin_loaded,
-        &widget
+        NULL
     );
 
     wp_core_connect(core);
 }
 
-void WpCommon::on_mixer_plugin_loaded(WpCore* core, GAsyncResult* res, void* widget){
+void WpCommon::catch_up_to_current_state(WayfireWireplumber *widget){
+    // catch up to objects already registered by the manager
+    WpIterator* reg_objs = wp_object_manager_new_iterator(object_manager);
+    GValue item = G_VALUE_INIT;
+    while (wp_iterator_next(reg_objs, &item)){
+        on_object_added(object_manager, (gpointer)g_value_get_object(&item), &widget);
+        g_value_unset(&item);
+    }
+
+}
+
+void WpCommon::on_mixer_plugin_loaded(WpCore* core, GAsyncResult* res, void* data){
     mixer_api = wp_plugin_find(core, "mixer-api");
     // as far as i understand, this should set the mixer api to use linear scale
     // however, it doesn’t and i can’t find what is wrong.
@@ -466,81 +451,83 @@ void WpCommon::on_mixer_plugin_loaded(WpCore* core, GAsyncResult* res, void* wid
         NULL,
         NULL,
         (GAsyncReadyCallback)on_default_nodes_plugin_loaded,
-        widget
+        NULL
     );
 
 }
 
-void WpCommon::on_default_nodes_plugin_loaded(WpCore* core, GAsyncResult* res, void* widget){
+void WpCommon::on_default_nodes_plugin_loaded(WpCore* core, GAsyncResult* res, void* data){
     default_nodes_api = wp_plugin_find(core, "default-nodes-api");
 
-    on_all_plugins_loaded(core, widget);
+    on_all_plugins_loaded();
 }
 
-void WpCommon::on_all_plugins_loaded(WpCore* core, void* widget){
+void WpCommon::on_all_plugins_loaded(){
     g_signal_connect(
         mixer_api,
         "changed",
         G_CALLBACK(WpCommon::on_mixer_changed),
-        widget
+        NULL
     );
 
     g_signal_connect(
         default_nodes_api,
         "changed",
         G_CALLBACK(WpCommon::on_default_nodes_changed),
-        widget
+        NULL
     );
 
     g_signal_connect(
         object_manager,
         "object_added",
         G_CALLBACK(on_object_added),
-        widget
+        NULL
     );
 
     g_signal_connect(
         object_manager,
         "object-removed",
         G_CALLBACK(on_object_removed),
-        widget
+        NULL
     );
 
 	wp_core_install_object_manager(core, object_manager);
 }
 
-void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpointer widget){
+void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpointer data){
     // adds a new widget to the appropriate section
 
     WpPipewireObject* obj = (WpPipewireObject*)object;
 
-    WayfireWireplumber* wdg = (WayfireWireplumber*)widget;
-
-    WfWpControl* control;
-    Gtk::Box* which_box;
     const gchar* type = wp_pipewire_object_get_property(obj, PW_KEY_MEDIA_CLASS);
-    if (g_strcmp0(type, "Audio/Sink") == 0){
-        which_box = &(wdg->sinks_box);
-        control = new WfWpControlDevice(obj, wdg);
-    }
-    else if (g_strcmp0(type, "Audio/Source") == 0){
-        which_box = &(wdg->sources_box);
-        control = new WfWpControlDevice(obj, wdg);
-    }
-    else if (g_strcmp0(type, "Stream/Output/Audio") == 0){
-        which_box = &(wdg->streams_box);
-        control = new WfWpControl(obj, (WayfireWireplumber*)widget);
-    }
-    else {
-        std::cout << "Could not match pipewire object media class, ignoring\n";
-        return;
-    }
 
-    wdg->objects_to_controls.insert({obj, control});
-    which_box->append((Gtk::Widget&)*control);
+    for (auto widget : widgets){
+
+        WfWpControl* control;
+        Gtk::Box* which_box;
+        if (g_strcmp0(type, "Audio/Sink") == 0){
+            which_box = &(widget->sinks_box);
+            control = new WfWpControlDevice(obj, widget);
+        }
+        else if (g_strcmp0(type, "Audio/Source") == 0){
+            which_box = &(widget->sources_box);
+            control = new WfWpControlDevice(obj, widget);
+        }
+        else if (g_strcmp0(type, "Stream/Output/Audio") == 0){
+            which_box = &(widget->streams_box);
+            control = new WfWpControl(obj, (WayfireWireplumber*)widget);
+        }
+        else {
+            std::cout << "Could not match pipewire object media class, ignoring\n";
+            return;
+        }
+
+        widget->objects_to_controls.insert({obj, control});
+        which_box->append((Gtk::Widget&)*control);
+    }
 }
 
-void WpCommon::on_mixer_changed(gpointer mixer_api, guint id, gpointer widget){
+void WpCommon::on_mixer_changed(gpointer mixer_api, guint id, gpointer data){
     // update the visual of the appropriate WfWpControl according to external changes
 
     GVariant* v = NULL;
@@ -556,50 +543,60 @@ void WpCommon::on_mixer_changed(gpointer mixer_api, guint id, gpointer widget){
     g_variant_lookup(v, "mute", "b", &mute);
     g_clear_pointer(&v, g_variant_unref);
 
-    WayfireWireplumber* wdg = (WayfireWireplumber*)widget;
-    // find the control that corresponds to this id (match bound id)
-    WfWpControl* control;
+    for (auto widget : widgets){
 
-    for (auto &it : wdg->objects_to_controls) {
-        WpPipewireObject* obj = it.first;
-        control = it.second;
-        if (wp_proxy_get_bound_id(WP_PROXY(obj)) == id){
-            break;
+        WfWpControl* control;
+
+        for (auto &it : widget->objects_to_controls){
+            WpPipewireObject* obj = it.first;
+            control = it.second;
+            if (wp_proxy_get_bound_id(WP_PROXY(obj)) == id){
+                break;
+            }
         }
+
+        control->set_btn_status_no_callbk(mute);
+        control->set_scale_target_value(std::cbrt(volume)); // see line x
+        control->update_icon();
+
+        // if we have the *full* mixer in the popover
+        if ((Gtk::Widget*)&(widget->master_box)){
+            // if shown, stop there nothing
+            if (widget->popover->is_visible()) return;
+
+            // if hidden, replace by the popover
+            widget->face = control->copy();
+            widget->popover->set_child(*widget->face);
+        }
+
+        // ensure the control in the popover is the one that was updated
+        if (
+            control->object
+            !=
+            ((WfWpControl*)(widget->popover->get_child()))->object
+        ){
+            widget->face = control->copy();
+            widget->popover->set_child(*widget->face);
+        }
+        else {
+            // update the face’s values ; else because the WfWpControl constructor already syncs the values
+            widget->face->set_btn_status_no_callbk(mute);
+            widget->face->set_scale_target_value(std::cbrt(volume)); // see line x
+            widget->face->update_icon();
+        }
+
+        // if it was hidden, show it
+        if (!widget->popover->is_visible()){
+            widget->popover->popup();
+        }
+        
+        // in all cases, (re-)schedule hiding
+        widget->check_set_popover_timeout();
     }
-
-    if (!control){
-        return;
-    }
-
-    control->set_btn_status_no_callbk(mute);
-    control->set_scale_target_value(std::cbrt(volume)); // see line x
-    control->update_icon();
-
-    // only if the popover is not already visible and showing something else
-    if (!wdg->popover->is_visible() && control->object
-        !=
-        ((WfWpControl*)(wdg->popover->get_child()))->object
-    ){
-        wdg->face = control->copy();
-        wdg->popover->set_child(*wdg->face);
-    }
-
-    wdg->face->set_btn_status_no_callbk(mute);
-    wdg->face->set_scale_target_value(std::cbrt(volume)); // see line x
-    wdg->face->update_icon();
-
-    if (!wdg->popover->is_visible()){
-        wdg->popover->popup();
-    }
-    wdg->check_set_popover_timeout();
-
-    wdg->update_icon();
 }
 
-void WpCommon::on_default_nodes_changed(gpointer default_nodes_api, gpointer widget){
+void WpCommon::on_default_nodes_changed(gpointer default_nodes_api, gpointer data){
     std::cout << "default nodes changed\n";
-    WayfireWireplumber* wdg = (WayfireWireplumber*) widget;
     std::vector<guint32> defaults;
     guint32 id = SPA_ID_INVALID;
 
@@ -610,46 +607,50 @@ void WpCommon::on_default_nodes_changed(gpointer default_nodes_api, gpointer wid
         }
     }
 
-    for (const auto &entry : wdg->objects_to_controls) {
-        auto obj = WP_PIPEWIRE_OBJECT(entry.first);
-        auto ctrl = (WfWpControlDevice*) entry.second;
+    for (auto widget : widgets){
 
-        guint32 bound_id = wp_proxy_get_bound_id(WP_PROXY(obj));
-        if (bound_id == SPA_ID_INVALID){
-            continue;
-        }
+        for (const auto &entry : widget->objects_to_controls) {
+            auto obj = WP_PIPEWIRE_OBJECT(entry.first);
+            auto ctrl = (WfWpControlDevice*) entry.second;
 
-        bool is_default = std::any_of(defaults.begin(), defaults.end(), [bound_id](guint32 def_id){ return def_id == bound_id; });
-        if (is_default) {
-            ctrl->set_def_status_no_callbk(true);
-            continue;
-        }
+            guint32 bound_id = wp_proxy_get_bound_id(WP_PROXY(obj));
+            if (bound_id == SPA_ID_INVALID){
+                continue;
+            }
 
-        // if the control is not for a sink or source (non WfWpControlDevice), don’t try to set status
-        const gchar* type = wp_pipewire_object_get_property(obj, PW_KEY_MEDIA_CLASS);
-        if (g_strcmp0(type, "Audio/Sink") == 0 || g_strcmp0(type, "Audio/Source") == 0){
-            ctrl->set_def_status_no_callbk(false);
+            bool is_default = std::any_of(defaults.begin(), defaults.end(), [bound_id](guint32 def_id){ return def_id == bound_id; });
+            if (is_default) {
+                ctrl->set_def_status_no_callbk(true);
+                continue;
+            }
+
+            // if the control is not for a sink or source (non WfWpControlDevice), don’t try to set status
+            const gchar* type = wp_pipewire_object_get_property(obj, PW_KEY_MEDIA_CLASS);
+            if (g_strcmp0(type, "Audio/Sink") == 0 || g_strcmp0(type, "Audio/Source") == 0){
+                ctrl->set_def_status_no_callbk(false);
+            }
         }
     }
 }
 
-void WpCommon::on_object_removed(WpObjectManager* manager, gpointer object, gpointer widget){
-    WayfireWireplumber* wdg = (WayfireWireplumber*)widget;
+void WpCommon::on_object_removed(WpObjectManager* manager, gpointer object, gpointer data){
+    for (auto widget : widgets){
+        auto it = widget->objects_to_controls.find((WpPipewireObject*)object);
+        if (it == widget->objects_to_controls.end()){
+            // shouldn’t happen, but checking to avoid weird situations
+            return;
+        }
+        WfWpControl* control = it->second;
+        Gtk::Box* box = (Gtk::Box*)control->get_parent();
+        box->remove(*control);
 
-    auto it = wdg->objects_to_controls.find((WpPipewireObject*)object);
-    if (it == wdg->objects_to_controls.end()){
-        // shouldn’t happen, but checking to avoid weird situations
-        return;
+        delete control;
+        widget->objects_to_controls.erase((WpPipewireObject*)object);
     }
-    WfWpControl* control = it->second;
-    Gtk::Box* box = (Gtk::Box*)control->get_parent();
-    box->remove(*control);
-
-    delete control;
-    wdg->objects_to_controls.erase((WpPipewireObject*)object);
 }
 
 WayfireWireplumber::~WayfireWireplumber(){
+	WpCommon::widgets.erase(std::find(WpCommon::widgets.begin(), WpCommon::widgets.end(), this));
 	gtk_widget_unparent(GTK_WIDGET(popover->gobj()));
 	popover_timeout.disconnect();
 }
