@@ -10,7 +10,6 @@
 #include "gtkmm/togglebutton.h"
 #include "animated_scale.hpp"
 #include "widget.hpp"
-#include "wp/defs.h"
 #include "wp/proxy-interfaces.h"
 #include "wp/proxy.h"
 #include "wp/spa-pod.h"
@@ -82,6 +81,8 @@ WfWpControl::WfWpControl(WpPipewireObject* obj, WayfireWireplumber* parent_widge
 
     label.set_text(Glib::ustring(name));
 
+    button.set_child(volume_icon);
+
     attach(label, 0, 0, 2, 1);
     attach(button, 1, 1, 1, 1);
     attach(scale, 0, 1, 1, 1);
@@ -125,6 +126,8 @@ WfWpControl::WfWpControl(WpPipewireObject* obj, WayfireWireplumber* parent_widge
     g_clear_pointer(&v, g_variant_unref);
     set_btn_status_no_callbk(mute);
     set_scale_target_value(std::cbrt(volume)); // see line x
+
+    update_icon();
 }
 
 Glib::ustring WfWpControl::get_name(){
@@ -139,6 +142,26 @@ void WfWpControl::set_btn_status_no_callbk(bool state){
 
 void WfWpControl::set_scale_target_value(double volume){
     scale.set_target_value(volume);
+}
+
+void WfWpControl::update_icon(){
+
+    VolumeLevel current = volume_icon_for(get_scale_target_value());
+
+    if (is_muted()){
+        volume_icon.set_from_icon_name("audio-volume-muted");
+        return;
+    }
+
+    std::map<VolumeLevel, std::string> icon_name_from_state = {
+        {VOLUME_LEVEL_MUTE, "audio-volume-muted"},
+        {VOLUME_LEVEL_LOW, "audio-volume-low"},
+        {VOLUME_LEVEL_MED, "audio-volume-medium"},
+        {VOLUME_LEVEL_HIGH, "audio-volume-high"},
+        {VOLUME_LEVEL_OOR, "audio-volume-muted"},
+    };
+
+    volume_icon.set_from_icon_name(icon_name_from_state.at(current));
 }
 
 double WfWpControl::get_scale_target_value(){
@@ -236,6 +259,9 @@ WfWpControlDevice::WfWpControlDevice(WpPipewireObject* obj, WayfireWireplumber* 
     attach(default_btn, 1, 0, 1, 1);
 
     WpProxy* proxy = WP_PROXY(object);
+
+    is_def_icon.set_from_icon_name("emblem-default");
+    default_btn.set_child(is_def_icon);
 
     def_conn = default_btn.signal_clicked().connect(
         [proxy](){
@@ -630,6 +656,7 @@ void WpCommon::on_mixer_changed(gpointer mixer_api, guint id, gpointer widget){
 
     control->set_btn_status_no_callbk(mute);
     control->set_scale_target_value(std::cbrt(volume)); // see line x
+    control->update_icon();
 
     // only if the popover is not already visible and showing something else
     if (!wdg->popover->is_visible() && control->object
@@ -642,6 +669,7 @@ void WpCommon::on_mixer_changed(gpointer mixer_api, guint id, gpointer widget){
 
     wdg->face->set_btn_status_no_callbk(mute);
     wdg->face->set_scale_target_value(std::cbrt(volume)); // see line x
+    wdg->face->update_icon();
 
     if (!wdg->popover->is_visible()){
         wdg->popover->popup();

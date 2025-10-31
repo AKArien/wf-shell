@@ -22,6 +22,7 @@ class WfWpControl : public Gtk::Grid{
         WayfireAnimatedScale scale;
         Gtk::Label label;
         Gtk::ToggleButton button;
+        Gtk::Image volume_icon;
         sigc::connection mute_conn;
         WayfireWireplumber* parent;
 
@@ -32,6 +33,7 @@ class WfWpControl : public Gtk::Grid{
         void set_btn_status_no_callbk(bool state);
         void set_scale_target_value(double volume);
         double get_scale_target_value();
+        void update_icon();
         bool is_muted();
         WfWpControl* copy();
 };
@@ -58,6 +60,7 @@ class WfWpControlDevice : public WfWpControl{
     private:
         // * port stuff
         sigc::connection def_conn;
+        Gtk::Image is_def_icon;
 
     public:
         WfWpControlDevice(WpPipewireObject* obj, WayfireWireplumber* parent_widget);
