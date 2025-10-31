@@ -29,11 +29,17 @@ deps = [
   wfconfig,
   gtklayershell,
   dbusmenu_gtk,
+  wireplumber,
 ]
 
 if libpulse.found()
   widget_sources += 'widgets/volume.cpp'
   deps += [libpulse, libgvc]
+endif
+
+if wireplumber.found()
+  widget_sources += 'wirgets/wireplumber.cpp'
+  deps += [wireplumber]
 endif
 
 executable(
