@@ -48,6 +48,13 @@
 		</_long>
 		<default>true</default>
 	</option>
+	<option name"force_center" type="bool">
+		<_short>Force centering by elements</_short>
+		<_long>
+			If on, the panel elements are centered around the middle of it, and thus the edge it runs along. This will lead to unused space on the side that has the least space taken up by the widgets.
+		</_long>
+		<default>false</default>
+	</option>
 	<option name="autohide" type="bool">
 		<_short>Autohide</_short>
 		<default>false</default>
