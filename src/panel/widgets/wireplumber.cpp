@@ -177,82 +177,6 @@ WfWpControl* WfWpControl::copy(){
     return copy;
 }
 
-WfWpControlStream::WfWpControlStream(WpPipewireObject* obj, WayfireWireplumber* parent_widget) : WfWpControl(obj, parent_widget){
-    // for streams, we determine what sink they go to
-
-    // register all sinks
-    potential_outputs_names = Gtk::StringList::create();
-    for (const auto& [obj, name] : parent->sinks_to_names){
-        register_potential_output(obj);
-    }
-
-    parent->streams_controls.push_back(this);
-
-    attach(output_selector, 1, 0, 1, 1);
-    output_selector.set_model(potential_outputs_names);
-
-    output_selector.connect_property_changed("selected-item", [this](){
-        guint32 id = id_from_name(potential_outputs_names->get_string(output_selector.get_selected()));
-        WpSpaPodBuilder* builder = wp_spa_pod_builder_new_object("Spa:Pod:Object:Param:Props", "Props");
-        wp_spa_pod_builder_add_property(builder, "target.object");
-        wp_spa_pod_builder_add_int(builder, id);
-        WpSpaPod* pod = wp_spa_pod_builder_end(builder);
-
-        wp_pipewire_object_set_param(object, "Props", 0, pod);
-
-    });
-
-    // force selection of the correct output
-    verify_current_output();
-}
-
-guint32 WfWpControlStream::id_from_name(Glib::ustring name_s){
-    for (auto [id, name] : parent->sinks_to_names){
-        if (name.compare(name_s) == 0){
-            return id;
-        }
-    }
-    return 0;
-}
-
-void WfWpControlStream::register_potential_output(guint32 id){
-    potential_outputs_names->append(parent->sinks_to_names.find(id)->second);
-    verify_current_output();
-}
-
-void WfWpControlStream::remove_potential_output(guint32 id){
-    Glib::ustring name;
-    guint index;
-    name = parent->sinks_to_names.find(id)->second;
-    index = potential_outputs_names->find(name);
-    potential_outputs_names->remove(index);
-    verify_current_output();
-}
-
-void WfWpControlStream::verify_current_output(){
-    const gchar* target = wp_pipewire_object_get_property(object, "target.object");
-    for (const auto& [obj, name] : parent->sinks_to_names){
-        if (g_strcmp0(name.c_str(), target) == 0){
-            output_selector.set_selected(potential_outputs_names->find(name));
-        }
-    }
-}
-
-WfWpControlStream* WfWpControlStream::copy(){
-    WfWpControlStream* copy = new WfWpControlStream(object, parent);
-    return copy;
-}
-
-WfWpControlStream::~WfWpControlStream(){
-    parent->streams_controls.erase(
-        std::find(
-            parent->streams_controls.begin(),
-            parent->streams_controls.end(),
-            this
-        )
-    );
-}
-
 WfWpControlDevice::WfWpControlDevice(WpPipewireObject* obj, WayfireWireplumber* parent_widget) : WfWpControl(obj, parent_widget){
     // for devices (sinks and sources), we determine if they are the default
 
@@ -589,7 +513,6 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
     // adds a new widget to the appropriate section
 
     WpPipewireObject* obj = (WpPipewireObject*)object;
-    guint32 id = wp_proxy_get_bound_id(WP_PROXY(obj));
 
     WayfireWireplumber* wdg = (WayfireWireplumber*)widget;
 
@@ -599,19 +522,14 @@ void WpCommon::on_object_added(WpObjectManager* manager, gpointer object, gpoint
     if (g_strcmp0(type, "Audio/Sink") == 0){
         which_box = &(wdg->sinks_box);
         control = new WfWpControlDevice(obj, wdg);
-        wdg->sinks_to_names.insert({id, control->get_name()});
-        for (auto stream : wdg->streams_controls){
-            stream->register_potential_output(id);
-        }
     }
     else if (g_strcmp0(type, "Audio/Source") == 0){
         which_box = &(wdg->sources_box);
         control = new WfWpControlDevice(obj, wdg);
-        wdg->sources_to_names.insert({id, control->get_name()});
     }
     else if (g_strcmp0(type, "Stream/Output/Audio") == 0){
         which_box = &(wdg->streams_box);
-        control = new WfWpControlStream(obj, (WayfireWireplumber*)widget);
+        control = new WfWpControl(obj, (WayfireWireplumber*)widget);
     }
     else {
         std::cout << "Could not match pipewire object media class, ignoring\n";
@@ -693,11 +611,11 @@ void WpCommon::on_default_nodes_changed(gpointer default_nodes_api, gpointer wid
     }
 
     for (const auto &entry : wdg->objects_to_controls) {
-        auto proxy = WP_PROXY(entry.first);
+        auto obj = WP_PIPEWIRE_OBJECT(entry.first);
         auto ctrl = (WfWpControlDevice*) entry.second;
 
-        guint32 bound_id = wp_proxy_get_bound_id(proxy);
-        if (bound_id == SPA_ID_INVALID) {
+        guint32 bound_id = wp_proxy_get_bound_id(WP_PROXY(obj));
+        if (bound_id == SPA_ID_INVALID){
             continue;
         }
 
@@ -708,10 +626,8 @@ void WpCommon::on_default_nodes_changed(gpointer default_nodes_api, gpointer wid
         }
 
         // if the control is not for a sink or source (non WfWpControlDevice), don’t try to set status
-        bool in_sinks = wdg->sinks_to_names.find(bound_id) != wdg->sinks_to_names.end();
-        bool in_sources = wdg->sources_to_names.find(bound_id) != wdg->sources_to_names.end();
-
-        if (in_sinks || in_sources) {
+        const gchar* type = wp_pipewire_object_get_property(obj, PW_KEY_MEDIA_CLASS);
+        if (g_strcmp0(type, "Audio/Sink") == 0 || g_strcmp0(type, "Audio/Source") == 0){
             ctrl->set_def_status_no_callbk(false);
         }
     }
@@ -731,22 +647,6 @@ void WpCommon::on_object_removed(WpObjectManager* manager, gpointer object, gpoi
 
     delete control;
     wdg->objects_to_controls.erase((WpPipewireObject*)object);
-
-
-    guint32 id = wp_proxy_get_bound_id(WP_PROXY((WpPipewireObject*)object));
-    for (auto stream : wdg->streams_controls){
-        stream->remove_potential_output(id);
-    }
-
-    // erase from sinks_to_names / sources_to_names only if present
-    auto sit = wdg->sinks_to_names.find(id);
-    if (sit != wdg->sinks_to_names.end()) {
-        wdg->sinks_to_names.erase(sit);
-    }
-    auto srcit = wdg->sources_to_names.find(id);
-    if (srcit != wdg->sources_to_names.end()) {
-        wdg->sources_to_names.erase(srcit);
-    }
 }
 
 WayfireWireplumber::~WayfireWireplumber(){

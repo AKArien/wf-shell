@@ -38,27 +38,12 @@ class WfWpControl : public Gtk::Grid{
         WfWpControl* copy();
 };
 
-// streams
-class WfWpControlStream : public WfWpControl{
-    private:
-        Gtk::DropDown output_selector;
-        std::shared_ptr<Gtk::StringList> potential_outputs_names; // the cleaner way would be to make a custom GtkListItemFactory, but doing this would appear to be way, way simpler
-        WfWpControl* output;
-        guint32 id_from_name(Glib::ustring name_s);
-
-    public:
-        WfWpControlStream(WpPipewireObject* obj, WayfireWireplumber* parent_widget);
-        void register_potential_output(guint32 id);
-        void remove_potential_output(guint32 id);
-        void verify_current_output();
-        WfWpControlStream* copy();
-        ~WfWpControlStream();
-};
+// todo : add a WfWpControlStream class that presents a dropdown to select which sink a stream goes to
 
 // sinks and sources
 class WfWpControlDevice : public WfWpControl{
     private:
-        // * port stuff
+        // todo : add port stuff
         sigc::connection def_conn;
         Gtk::Image is_def_icon;
 
@@ -106,12 +91,6 @@ class WayfireWireplumber : public WayfireWidget{
         // TODO : add a category for stuff that listens to an audio source
 
         std::map<WpPipewireObject*, WfWpControl*> objects_to_controls;
-
-        // a vector of the streams controls, to update in on_mixer_changed
-        std::vector<WfWpControlStream*> streams_controls;
-        // and the index for it
-        std::map<guint32, Glib::ustring> sinks_to_names, sources_to_names;
-
 
         /** Update the icon based on volume and muted state of the face widget */
         void update_icon();
