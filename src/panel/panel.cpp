@@ -9,14 +9,8 @@
 #include <iostream>
 #include <sstream>
 
-#include <map>
-<<<<<<< HEAD
-#include <css-config.hpp>
-=======
-#include <filesystem>
 #include <css-config.hpp>
 
->>>>>>> extra-options
 #include "panel.hpp"
 
 #include "gtkmm/sizegroup.h"

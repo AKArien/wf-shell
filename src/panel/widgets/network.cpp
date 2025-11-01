@@ -443,11 +443,8 @@ void WayfireNetworkInfo::update_layout(){
 
 void WayfireNetworkInfo::handle_config_reload()
 {
-<<<<<<< HEAD
-=======
 	update_layout();
 
->>>>>>> extra-options
     if (status_opt.value() == NETWORK_STATUS_ICON)
     {
         if (status.get_parent())
