@@ -12,7 +12,6 @@
 #include "widget.hpp"
 #include "wp/proxy-interfaces.h"
 #include "wp/proxy.h"
-#include "wp/spa-pod.h"
 
 #include <pipewire/keys.h>
 
@@ -67,7 +66,7 @@ WfWpControl::WfWpControl(WpPipewireObject* obj, WayfireWireplumber* parent_widge
     guint32 id = wp_proxy_get_bound_id(WP_PROXY(object));
 
     scale.set_range(0.0, 1.0);
-	scale.set_target_value(0.5);
+    scale.set_target_value(0.5);
     scale.set_size_request(300, 0);
 
     const gchar* name;
@@ -259,19 +258,16 @@ void WayfireWireplumber::init(Gtk::Box *container){
     button->get_popover()->set_child(master_box);
     popover = button->get_popover();
     popover->set_autohide(true);
-    // popover->signal_closed().connect(
-        // [=]{
-
-
-            // when the widget is clicked during the « small » popup, replace by full mixer
+    popover->signal_closed().connect(
+        [=]{
+            // when the widget is clicked during the « small » popup, replace by full mixer
             // if the popover child is the master box, it was already closed and we don’t interfere
-            // if (popover->get_child() != (Gtk::Widget*)&master_box){
-                // popover->set_child(master_box);
-                // this causes a small delay, but is the simplest way. could be made to look better
-                // button->activate();
-            // }
-        // }
-    // );
+            if (popover->get_child() != (Gtk::Widget*)&master_box){
+                popover->set_child(master_box);
+                button->set_active(true);
+            }
+        }
+    );
 
     auto scroll_gesture = Gtk::EventControllerScroll::create();
     scroll_gesture->signal_scroll().connect([=] (double dx, double dy)
@@ -587,9 +583,9 @@ void WpCommon::on_mixer_changed(gpointer mixer_api, guint id, gpointer data){
 
         // if it was hidden, show it
         if (!widget->popover->is_visible()){
-            widget->popover->popup();
+            widget->button->set_active(true);
         }
-        
+
         // in all cases, (re-)schedule hiding
         widget->check_set_popover_timeout();
     }
