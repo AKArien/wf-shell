@@ -4,11 +4,14 @@
 #include "../widget.hpp"
 #include "gtkmm/togglebutton.h"
 #include "wf-popover.hpp"
+#include "wf-shell-app.hpp"
 #include "wp/proxy-interfaces.h"
 #include <gtkmm/image.h>
 #include <gtkmm/scale.h>
 extern "C" {
     #include <wp/wp.h>
+    #include <gdk/gdk.h>
+    #include <gdk/wayland/gdkwayland.h>
 }
 #include <wayfire/util/duration.hpp>
 #include <map>
@@ -57,7 +60,6 @@ class wayfire_config;
 class WayfireWireplumber : public WayfireWidget{
     private:
         Gtk::Image main_image;
-        // std::unique_ptr<WayfireMenuButton> button;
 
         WfOption<double> timeout{"panel/volume_display_timeout"};
         WfOption<double> scroll_sensitivity{"panel/volume_scroll_sensitivity"};
@@ -73,7 +75,9 @@ class WayfireWireplumber : public WayfireWidget{
 
     public:
         void init(Gtk::Box *container) override;
-        virtual ~WayfireWireplumber();
+
+        WayfireOutput* output;
+
         std::unique_ptr<WayfireMenuButton> button;
 
         Gtk::Popover* popover;
@@ -102,6 +106,8 @@ class WayfireWireplumber : public WayfireWidget{
         * a timer to hide it
         */
         void check_set_popover_timeout();
+
+        virtual ~WayfireWireplumber();
 };
 
 namespace WpCommon{

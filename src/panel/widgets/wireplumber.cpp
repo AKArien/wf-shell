@@ -556,8 +556,11 @@ void WpCommon::on_mixer_changed(gpointer mixer_api, guint id, gpointer data){
         control->update_icon();
 
         // if we have the *full* mixer in the popover
-        if ((Gtk::Widget*)&(widget->master_box)){
-            // if shown, stop there nothing
+        if ((Gtk::Widget*)&(widget->master_box)
+            ==
+            (Gtk::Widget*)widget->popover->get_child()
+        ){
+            // if shown, stop there
             if (widget->popover->is_visible()) return;
 
             // if hidden, replace by the popover
@@ -578,13 +581,13 @@ void WpCommon::on_mixer_changed(gpointer mixer_api, guint id, gpointer data){
             // update the face’s values ; else because the WfWpControl constructor already syncs the values
             widget->face->set_btn_status_no_callbk(mute);
             widget->face->set_scale_target_value(std::cbrt(volume)); // see line x
-            widget->face->update_icon();
+            widget->update_icon();
         }
 
         // if it was hidden, show it
-        if (!widget->popover->is_visible()){
-            widget->button->set_active(true);
-        }
+        // if (!widget->popover->is_visible()){
+        //     widget->button->set_active(true);
+        // }
 
         // in all cases, (re-)schedule hiding
         widget->check_set_popover_timeout();
