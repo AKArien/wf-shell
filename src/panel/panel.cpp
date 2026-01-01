@@ -30,9 +30,7 @@
 #ifdef HAVE_WIREPLUMBER
     #include "widgets/wireplumber.hpp"
 #endif
-// #ifdef HAVE_LIGHT
-    #include "widgets/light/light.hpp"
-// #endif
+#include "widgets/light/light.hpp"
 #include "widgets/window-list/window-list.hpp"
 #include "widgets/notifications/notification-center.hpp"
 #include "widgets/tray/tray.hpp"
@@ -186,13 +184,12 @@ class WayfirePanel::impl
 
         if (name == "light")
         {
-// #ifdef HAVE_LIGHT
             return Widget(new WayfireLight());
-// #else
-    // #warning "Light libraries not found, light widget will not be available."
-            // std::cerr << "Built without light support, light widget "
-                         // " is not available." << std::endl;
-// #endif
+#ifndef HAVE_DDCUTIL
+    #warning "Libddcutil not found, light widget will not support external monitors."
+            std::cerr << "Built without DDC/CI support, light widget "
+                         " doesn’t support external monitors." << std::endl;
+#endif
         }
 
         if (name == "window-list")
