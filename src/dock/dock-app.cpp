@@ -58,7 +58,8 @@ void WfDockApp::on_activate()
     new CssFromConfigInt("dock/icon_height", ".toplevel-icon {-gtk-icon-size:", "px;}");
     IconProvider::load_custom_icons();
 
-    /* At this point, wayland connection has been initialized, and hopefully outputs have been created */
+    /* At this point, wayland connection has been initialized,
+     * and hopefully outputs have been created */
     auto gdk_display = gdk_display_get_default();
     auto display     = gdk_wayland_display_get_wl_display(gdk_display);
 
@@ -91,8 +92,8 @@ void WfDockApp::handle_new_output(WayfireOutput *output)
 void WfDockApp::handle_output_removed(WayfireOutput *output)
 {
     /* Send an artificial output leave.
-     * This is useful because in this way the toplevel can safely destroy its
-     * icons created on that particular output */
+     * This is useful because in this way the toplevel can safely destroy
+     * its icons created on that particular output */
     for (auto& toplvl : priv->toplevels)
     {
         toplvl.second->handle_output_leave(output->wo);

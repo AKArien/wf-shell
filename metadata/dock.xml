@@ -14,7 +14,7 @@
 	<option name="autohide_duration" type="int">
 		<_short>Autohide animation duration</_short>
 		<_long>
-			Time (in milliseconds) the panel takes to expand and retract
+			Time (in milliseconds) the dock takes to expand and retract
 		</_long>
 		<default>300</default>
 	</option>
