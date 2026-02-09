@@ -249,7 +249,6 @@ class WayfirePanel::impl
 #endif
         }
 
-<<<<<<< HEAD
         if (name == "wp-mixer")
         {
 #ifdef HAVE_WIREPLUMBER
@@ -260,8 +259,6 @@ class WayfirePanel::impl
 #endif
         }
 
-=======
->>>>>>> f6a4d52 (removed addition of wireplumber widget of pr 307)
         if (name == "window-list")
         {
             return Widget(new WayfireWindowList(output));

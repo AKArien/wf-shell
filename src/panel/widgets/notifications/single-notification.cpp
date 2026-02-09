@@ -3,7 +3,7 @@
 
 #include <glibmm/main.h>
 #include <gtk-utils.hpp>
-#include <gtkmm/icontheme.h>
+#include <gtkmm.h>
 
 #include <ctime>
 #include <string>
@@ -49,16 +49,10 @@ WfSingleNotification::WfSingleNotification(const Notification & notification)
 {
     if (is_file_uri(notification.app_icon))
     {
-        auto file_name = path_from_uri(notification.app_icon);
-        int height     = Gtk::IconSize(Gtk::ICON_SIZE_LARGE_TOOLBAR);
-        auto pixbuf    = load_icon_pixbuf_safe(file_name, height);
-        app_icon.set(pixbuf);
-    } else if (Gtk::IconTheme::get_default()->has_icon(notification.app_icon))
-    {
-        app_icon.set_from_icon_name(notification.app_icon, Gtk::ICON_SIZE_LARGE_TOOLBAR);
+        app_icon.set(path_from_uri(notification.app_icon));
     } else
     {
-        app_icon.set_from_icon_name("dialog-information", Gtk::ICON_SIZE_LARGE_TOOLBAR);
+        app_icon.set_from_icon_name(notification.app_icon);
     }
 
     add_css_class("notification");
@@ -95,17 +89,11 @@ WfSingleNotification::WfSingleNotification(const Notification & notification)
         [=] { Daemon::Instance()->closeNotification(notification.id, Daemon::CloseReason::Dismissed); }));
     top_bar.set_spacing(5);
 
-    child.add(top_bar);
+    child.append(top_bar);
 
-    Gtk::IconSize body_image_size = Gtk::ICON_SIZE_DIALOG;
     if (notification.hints.image_data)
     {
         auto image_pixbuf = notification.hints.image_data;
-        if (image_pixbuf->get_width() > width)
-        {
-            image_pixbuf = image_pixbuf->scale_simple(width,
-                width * image_pixbuf->get_height() / image_pixbuf->get_width(), Gdk::INTERP_BILINEAR);
-        }
 
         image.set(image_pixbuf);
     } else if (!notification.hints.image_path.empty())
@@ -115,16 +103,16 @@ WfSingleNotification::WfSingleNotification(const Notification & notification)
             image.set(path_from_uri(notification.hints.image_path));
         } else
         {
-            image.set_from_icon_name(notification.hints.image_path, body_image_size);
+            image.set_from_icon_name(notification.hints.image_path);
         }
     }
 
     content.add_css_class("notification-contents");
     content.append(image);
 
-    text.set_halign(Gtk::ALIGN_START);
-    text.set_line_wrap();
-    text.set_line_wrap_mode(Pango::WRAP_CHAR);
+    text.set_halign(Gtk::Align::START);
+    text.set_wrap();
+    text.set_wrap_mode(Pango::WrapMode::CHAR);
     if (notification.body.empty())
     {
         text.set_markup(notification.summary);
@@ -134,9 +122,9 @@ WfSingleNotification::WfSingleNotification(const Notification & notification)
         text.set_markup("<b>" + notification.summary + "</b>" + "\n" + notification.body);
     }
 
-    content.pack_start(text);
+    content.append(text);
 
-    child.add(content);
+    child.append(content);
 
     actions.add_css_class("actions");
 
@@ -173,13 +161,15 @@ WfSingleNotification::WfSingleNotification(const Notification & notification)
         if (!actions.get_children().empty())
         {
             actions.set_homogeneous();
-            child.add(actions);
+            child.append(actions);
         }
     }
 
-    default_action_ev_box.add(child);
-    add(default_action_ev_box);
-    set_transition_type(Gtk::REVEALER_TRANSITION_TYPE_SLIDE_UP);
+    default_action_ev_box.set_child(child);
+    outer_box.append(default_action_ev_box);
+    outer_box.append(close_button);
+    set_child(outer_box);
+    set_transition_type(Gtk::RevealerTransitionType::SLIDE_UP);
 }
 
 WfSingleNotification::~WfSingleNotification()

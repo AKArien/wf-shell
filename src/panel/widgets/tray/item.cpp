@@ -4,8 +4,13 @@
 
 #include <gtkmm/icontheme.h>
 #include <gtkmm/tooltip.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
+#include <glib.h>
+#include <glib-object.h>
+#include <giomm/dbusmenumodel.h>
 
-#include <libdbusmenu-gtk/dbusmenu-gtk.h>
+#include <iostream>
+#include <cassert>
 
 static std::pair<Glib::ustring, Glib::ustring> name_and_obj_path(const Glib::ustring & service)
 {
@@ -41,18 +46,19 @@ static Glib::RefPtr<Gdk::Pixbuf> extract_pixbuf(IconData && pixbuf_data)
 
     auto *data_ptr = new auto(std::move(data));
     return Gdk::Pixbuf::create_from_data(
-        data_ptr->data(), Gdk::Colorspace::COLORSPACE_RGB, true, 8, width, height,
+        data_ptr->data(), Gdk::Colorspace::RGB, true, 8, width, height,
         4 * width, [data_ptr] (auto*) { delete data_ptr; });
 }
 
 StatusNotifierItem::StatusNotifierItem(const Glib::ustring & service)
 {
-    set_image(icon);
+    set_child(icon);
+    menu = std::make_shared<DbusMenuModel>();
 
     const auto & [name, path] = name_and_obj_path(service);
     dbus_name = name;
     Gio::DBus::Proxy::create_for_bus(
-        Gio::DBus::BUS_TYPE_SESSION, name, path, "org.kde.StatusNotifierItem",
+        Gio::DBus::BusType::SESSION, name, path, "org.kde.StatusNotifierItem",
         [this] (const Glib::RefPtr<Gio::AsyncResult> & result)
     {
         item_proxy = Gio::DBus::Proxy::create_for_bus_finish(result);
@@ -75,7 +81,6 @@ StatusNotifierItem::~StatusNotifierItem()
 void StatusNotifierItem::init_widget()
 {
     update_icon();
-    icon_size.set_callback([this] { update_icon(); });
     setup_tooltip();
     init_menu();
     add_css_class("widget-icon");
@@ -113,12 +118,30 @@ void StatusNotifierItem::init_widget()
     {
         int butt = click_gesture->get_current_button();
         const auto ev_coords = Glib::Variant<std::tuple<int, int>>::create({0, 0});
-        if (get_item_property<bool>("ItemIsMenu", true))
+
+        const int primary_click   = 1;
+        const int secondary_click = menu_on_middle_click ? 2 : 3;
+        const int tertiary_click  = menu_on_middle_click ? 3 : 2;
+        if (butt == primary_click)
         {
-            if (menu)
+            if (get_item_property<bool>("ItemIsMenu", true))
             {
-                /* Under all tests I tried this places sensibly */
-                menu->popup_at_widget(&icon, Gdk::GRAVITY_NORTH_EAST, Gdk::GRAVITY_SOUTH_EAST, NULL);
+                if (has_menu)
+                {
+                    popover.popup();
+                } else
+                {
+                    item_proxy->call("ContextMenu", ev_coords);
+                }
+            } else
+            {
+                item_proxy->call("Activate", ev_coords);
+            }
+        } else if (butt == secondary_click)
+        {
+            if (has_menu)
+            {
+                popover.popup();
             } else
             {
                 item_proxy->call("ContextMenu", ev_coords);
@@ -126,6 +149,11 @@ void StatusNotifierItem::init_widget()
         } else if (butt == tertiary_click)
         {
             item_proxy->call("SecondaryActivate", ev_coords);
+        } else
+        {
+            // Don't claim other buttons
+            click_gesture->set_state(Gtk::EventSequenceState::DENIED);
+            return;
         }
 
         return;
@@ -151,17 +179,14 @@ void StatusNotifierItem::setup_tooltip()
             get_item_property<Glib::ustring>("Title");
 
         const auto pixbuf = extract_pixbuf(std::move(tooltip_icon_data));
-
-        bool icon_shown = true;
-        if (icon_theme->has_icon(tooltip_icon_name))
-        {
-            tooltip->set_icon_from_icon_name(tooltip_icon_name, Gtk::ICON_SIZE_LARGE_TOOLBAR);
-        } else if (pixbuf)
+        bool icon_shown   = false;
+        if (pixbuf)
         {
             tooltip->set_icon(pixbuf);
+            icon_shown = true;
         } else
         {
-            icon_shown = false;
+            // tooltip->set_icon_from_name(tooltip_icon_name);
         }
 
         tooltip->set_markup(tooltip_label_text);
@@ -178,25 +203,35 @@ void StatusNotifierItem::update_icon()
         icon_theme->add_resource_path(icon_theme_path);
     } else
     {
-        icon_theme = Gtk::IconTheme::get_default();
+        icon_theme = Gtk::IconTheme::get_for_display(get_display());
     }
 
     const Glib::ustring icon_type_name =
         get_item_property<Glib::ustring>("Status") == "NeedsAttention" ? "AttentionIcon" : "Icon";
+    const bool hide = get_item_property<Glib::ustring>("Status") == "Passive";
     const auto icon_name   = get_item_property<Glib::ustring>(icon_type_name + "Name");
     const auto pixmap_data = extract_pixbuf(get_item_property<IconData>(icon_type_name + "Pixmap"));
-    if (icon_theme->lookup_icon(icon_name, icon_size))
+    if (pixmap_data)
     {
-        set_image_icon(icon, icon_name, icon_size, {}, icon_theme);
-    } else if (pixmap_data)
+        icon.set(pixmap_data);
+    } else
     {
-        icon.set(pixmap_data->scale_simple(icon_size, icon_size, Gdk::INTERP_BILINEAR));
+        icon.set_from_icon_name(icon_name);
+    }
+
+    if (hide)
+    {
+        this->hide();
+    } else
+    {
+        this->show();
     }
 }
 
 void StatusNotifierItem::init_menu()
 {
-    const auto menu_path = get_item_property<Glib::DBusObjectPathString>("Menu");
+    menu_path = get_item_property<Glib::DBusObjectPathString>("Menu");
+
     if (menu_path.empty())
     {
         return;
@@ -243,7 +278,7 @@ void StatusNotifierItem::handle_signal(const Glib::ustring & signal,
 }
 
 void StatusNotifierItem::fetch_property(const Glib::ustring & property_name,
-    const sigc::slot<void> & callback)
+    const sigc::slot<void()> & callback)
 {
     item_proxy->call(
         "org.freedesktop.DBus.Properties.Get",
@@ -261,4 +296,37 @@ void StatusNotifierItem::fetch_property(const Glib::ustring & property_name,
     },
         Glib::Variant<std::tuple<Glib::ustring, Glib::ustring>>::create({"org.kde.StatusNotifierItem",
             property_name}));
+}
+
+std::string StatusNotifierItem::get_unique_name()
+{
+    std::stringstream ss;
+    ss << dbus_name << "_" << menu_path;
+    return ss.str();
+}
+
+/*
+ *  DBUS names are in the format of :1.61
+ *  I have no idea what this means, I frankly don't care, but I need a way to generate an acceptable action
+ * group name from this
+ *  such that it always gets the same unique output for the same input
+ */
+
+const std::string CHARS_IN  = ":0123456789.";
+const std::string CHARS_OUT = "zabcdefghijk";
+std::string StatusNotifierItem::dbus_name_as_prefix()
+{
+    std::unordered_map<char, char> map;
+    for (int i = 0; i < (int)CHARS_IN.length(); i++)
+    {
+        map[CHARS_IN[i]] = CHARS_OUT[i];
+    }
+
+    std::stringstream ss;
+    for (int i = 0; i < (int)dbus_name.length(); i++)
+    {
+        ss << map[dbus_name[i]];
+    }
+
+    return ss.str();
 }
