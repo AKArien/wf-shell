@@ -20,3 +20,8 @@ struct WfIconLoadOptions
 void invert_pixbuf(Glib::RefPtr<Gdk::Pixbuf>& pbuff);
 
 void image_set_icon(Gtk::Image *image, std::string path);
+
+#define ROTATION_LEFT "left"
+#define ROTATION_RIGHT "right"
+
+void apply_rotation(Gtk::Widget& widget, std::string rotation);

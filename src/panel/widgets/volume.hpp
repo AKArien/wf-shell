@@ -1,11 +1,13 @@
 #pragma once
 
-#include "../widget.hpp"
 #include <gtkmm/image.h>
-#include "../../util/animated-scale.hpp"
+
 #include <pulse/pulseaudio.h>
 #include <gvc-mixer-control.h>
 #include <wayfire/util/duration.hpp>
+
+#include "../widget.hpp"
+#include "../../util/animated-scale.hpp"
 
 class WayfireVolume : public WayfireWidget
 {
