@@ -5,8 +5,8 @@
 #include <wf-option-wrap.hpp>
 
 /**
- * A button which shows a popover on click. It adjusts the popup position
- * automatically based on panel position (valid values are "top" and "bottom")
+ * A button which shows a popover on click. It adjusts the popup position automatically based on panel
+ * position (valid values are "top" and "bottom")
  */
 class WayfireMenuButton : public Gtk::MenuButton
 {
@@ -29,8 +29,8 @@ class WayfireMenuButton : public Gtk::MenuButton
     {}
 
     /**
-     * Set whether the popup should grab input focus when opened
-     * By default, the menu button interacts with the keyboard.
+     * Set whether the popup should grab input focus when opened By default, the menu button interacts with
+     * the keyboard.
      */
     void set_keyboard_interactive(bool interactive = true);
 
@@ -41,8 +41,7 @@ class WayfireMenuButton : public Gtk::MenuButton
     bool is_popover_focused() const;
 
     /**
-     * Grab the keyboard focus.
-     * Also sets the popover to keyboard interactive.
+     * Grab the keyboard focus. Also sets the popover to keyboard interactive.
      *
      * NOTE: this works only if the popover was already opened.
      */
