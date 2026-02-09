@@ -84,8 +84,8 @@ class WayfireShellApp
 
 
     /**
-     * WayfireShellApp is a singleton class. Using this function, any part of the application can get access
-     * to the shell app.
+     * WayfireShellApp is a singleton class.
+     * Using this function, any part of the application can get access to the shell app.
      */
     static WayfireShellApp& get();
 };

@@ -56,9 +56,6 @@ else
   message('Wireplumber not found, mixer widget will not be available.')
 endif
 
-executable(
-  'wf-panel',
-  ['panel.cpp'] + widget_sources,
-  dependencies: deps,
-  install: true,
-)
+executable('wf-panel', ['panel.cpp'] + widget_sources,
+        dependencies: deps,
+        install: true)

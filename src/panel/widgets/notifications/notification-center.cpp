@@ -1,13 +1,12 @@
 #include "notification-center.hpp"
 
 #include <glibmm/main.h>
-#include <gtkmm.h>
 
 #include <gtk-utils.hpp>
 
 #include "single-notification.hpp"
 
-void WayfireNotificationCenter::init(Gtk::Box *container)
+void WayfireNotificationCenter::init(Gtk::HBox *container)
 {
     button = std::make_unique<WayfireMenuButton>("panel");
     icon.add_css_class("widget-icon");
@@ -15,8 +14,9 @@ void WayfireNotificationCenter::init(Gtk::Box *container)
     button->get_children()[0]->add_css_class("flat");
 
     updateIcon();
-    button->set_child(icon);
-    container->append(*button);
+    button->add(icon);
+    container->add(*button);
+    button->show_all();
 
     auto *popover = button->get_popover();
     popover->set_size_request(WIDTH, HEIGHT);
@@ -132,9 +132,9 @@ void WayfireNotificationCenter::updateIcon()
 {
     if (dnd_enabled)
     {
-        icon.set_from_icon_name("notifications-disabled");
+        set_image_icon(icon, "notifications-disabled", icon_size);
     } else
     {
-        icon.set_from_icon_name("notifications");
+        set_image_icon(icon, "notifications", icon_size);
     }
 }
