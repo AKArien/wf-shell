@@ -1,10 +1,6 @@
-#include <gtkmm/window.h>
-#include <gdkmm/frameclock.h>
-#include <glibmm/main.h>
+#include <gtkmm.h>
+#include <glibmm.h>
 #include <gdk/wayland/gdkwayland.h>
-#include <glibmm/refptr.h>
-#include <gtkmm/constraint.h>
-#include <gtkmm/constraintlayout.h>
 #include <gtk4-layer-shell.h>
 
 #include "dock.hpp"
@@ -18,13 +14,11 @@ class WfDock::impl
     std::unique_ptr<WayfireAutohidingWindow> window;
     wl_surface *_wl_surface;
     Gtk::Box out_box;
-    Gtk::Box box;
-    Glib::RefPtr<Gtk::ConstraintLayout> layout;
+    Gtk::FlowBox box;
 
     WfOption<std::string> css_path{"dock/css_path"};
     WfOption<int> dock_width{"dock/dock_width"};
     WfOption<int> dock_height{"dock/dock_height"};
-
     WfOption<std::string> position{"dock/position"};
     WfOption<int> entries_per_line{"dock/max_per_line"};
 
@@ -42,19 +36,16 @@ class WfDock::impl
         gtk_layer_set_margin(window->gobj(), GTK_LAYER_SHELL_EDGE_LEFT, 0);
         gtk_layer_set_margin(window->gobj(), GTK_LAYER_SHELL_EDGE_RIGHT, 0);
 
-        layout = Gtk::ConstraintLayout::create();
-        box.set_layout_manager(layout);
-
-        out_box.append(box);
-        out_box.get_style_context()->add_class("out-box");
+        // out_box.append(box);
+        // out_box.get_style_context()->add_class("out-box");
         box.add_css_class("box");
 
-        window->set_child(out_box);
+        window->set_child(box);
         update_layout();
 
         window->add_css_class("wf-dock");
 
-        out_box.set_halign(Gtk::Align::CENTER);
+        // out_box.set_halign(Gtk::Align::CENTER);
 
         if (css_path.value() != "")
         {
@@ -74,7 +65,28 @@ class WfDock::impl
     void update_layout(){
         window->set_default_size(dock_width, dock_height);
 
+        if (position.value() == "bottom")
+        {
 
+        }
+        else if (position.value() == "left")
+        {
+            box.set_orientation(Gtk::Orientation::VERTICAL);
+            box.set_direction(Gtk::TextDirection::LTR);
+        }
+        else if (position.value() == "right")
+        {
+            box.set_orientation(Gtk::Orientation::VERTICAL);
+            box.set_direction(Gtk::TextDirection::RTL);
+        }
+        else
+        {
+            box.set_orientation(Gtk::Orientation::HORIZONTAL);
+            box.set_direction(Gtk::TextDirection::LTR);
+        }
+
+        box.set_min_children_per_line(entries_per_line);
+        box.set_max_children_per_line(entries_per_line);
     }
 
     void add_child(Gtk::Widget& widget)
