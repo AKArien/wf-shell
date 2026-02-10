@@ -6,7 +6,6 @@
 #include <gtkmm/constraint.h>
 #include <gtkmm/constraintlayout.h>
 #include <gtk4-layer-shell.h>
-#include <gtkmm/enums.h>
 
 #include "dock.hpp"
 #include "wf-shell-app.hpp"
@@ -20,9 +19,7 @@ class WfDock::impl
     wl_surface *_wl_surface;
     Gtk::Box out_box;
     Gtk::Box box;
-    // std::map<Gtk::Widget&, Glib::RefPtr<Gtk::Constraint>> widget_to_constraints;
     Glib::RefPtr<Gtk::ConstraintLayout> layout;
-    Gtk::Constraint::Attribute new_row_targ_attr, new_row_source_attr, new_itm_targ_attr, new_itm_source_attr;
 
     WfOption<std::string> css_path{"dock/css_path"};
     WfOption<int> dock_width{"dock/dock_width"};
@@ -77,69 +74,11 @@ class WfDock::impl
     void update_layout(){
         window->set_default_size(dock_width, dock_height);
 
-        if (position.value() == "top")
-        {
-            new_row_targ_attr = Gtk::Constraint::Attribute::TOP;
-            new_row_source_attr = Gtk::Constraint::Attribute::BOTTOM;
-            new_itm_targ_attr = Gtk::Constraint::Attribute::LEFT;
-            new_itm_source_attr = Gtk::Constraint::Attribute::RIGHT;
-        }
-        else if (position.value() == "bottom")
-        {
-            new_row_targ_attr = Gtk::Constraint::Attribute::BOTTOM;
-            new_row_source_attr = Gtk::Constraint::Attribute::TOP;
-            new_itm_targ_attr = Gtk::Constraint::Attribute::LEFT;
-            new_itm_source_attr = Gtk::Constraint::Attribute::RIGHT;
-        }
-        else if (position.value() == "left")
-        {
-            new_row_targ_attr = Gtk::Constraint::Attribute::LEFT;
-            new_row_source_attr = Gtk::Constraint::Attribute::RIGHT;
-            new_itm_targ_attr = Gtk::Constraint::Attribute::TOP;
-            new_itm_source_attr = Gtk::Constraint::Attribute::BOTTOM;
-        }
-        else if (position.value() == "right")
-        {
-            new_row_targ_attr = Gtk::Constraint::Attribute::RIGHT;
-            new_row_source_attr = Gtk::Constraint::Attribute::LEFT;
-            new_itm_targ_attr = Gtk::Constraint::Attribute::TOP;
-            new_itm_source_attr = Gtk::Constraint::Attribute::BOTTOM;
-        }
+
     }
 
     void add_child(Gtk::Widget& widget)
     {
-        if (box.get_children().size() == 0)
-        {
-            box.append(widget);
-            return;
-        }
-        if (box.get_children().size() % entries_per_line == 0){
-            auto constraint = Gtk::Constraint::create(
-                widget.make_refptr_constrainttarget(),
-                new_row_targ_attr,
-                Gtk::Constraint::Relation::EQ,
-                (box.get_children().at(box.get_children().size() - entries_per_line))->make_refptr_constrainttarget(),
-                new_row_source_attr,
-                1.0,
-                0.0,
-                1
-            );
-            layout->add_constraint(constraint);
-        } else
-        {
-            auto constraint = Gtk::Constraint::create(
-                widget.make_refptr_constrainttarget(),
-                new_itm_targ_attr,
-                Gtk::Constraint::Relation::EQ,
-                (box.get_children().at(box.get_children().size()-1))->make_refptr_constrainttarget(),
-                new_itm_source_attr,
-                1.0,
-                0.0,
-                1
-            );
-            layout->add_constraint(constraint);
-        }
         box.append(widget);
     }
 
