@@ -32,6 +32,8 @@ class WayfireLaunchers : public WayfireWidget
     launcher_container launchers;
     launcher_container get_launchers_from_config();
 
+    WfOption<int> spacing{"panel/launchers_spacing"};
+
   public:
     virtual void init(Gtk::Box *container);
 

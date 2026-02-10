@@ -174,6 +174,8 @@ void WayfireLaunchers::update_layout()
     {
         box.set_orientation(Gtk::Orientation::HORIZONTAL);
     }
+
+    box.set_spacing(spacing);
 }
 
 void WayfireLaunchers::handle_config_reload()

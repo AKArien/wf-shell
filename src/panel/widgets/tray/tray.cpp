@@ -9,7 +9,6 @@ void WayfireStatusNotifier::init(Gtk::Box *container)
     icons_box.set_valign(Gtk::Align::FILL);
     icons_box.set_expand(true);
     icons_box.set_homogeneous(true);
-    icons_box.set_spacing(5);
     container->append(icons_box);
 }
 
@@ -46,6 +45,8 @@ void WayfireStatusNotifier::update_layout()
     {
         icons_box.set_orientation(Gtk::Orientation::HORIZONTAL);
     }
+
+    icons_box.set_spacing(spacing);
 }
 
 void WayfireStatusNotifier::handle_config_reload()
