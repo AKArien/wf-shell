@@ -6,6 +6,7 @@
 #include <gdk/wayland/gdkwayland.h>
 #include <gtk4-layer-shell.h>
 #include <gtkmm/sizegroup.h>
+#include <gtkmm/enums.h>
 
 #include <iostream>
 #include <memory>
@@ -93,25 +94,43 @@ class WayfirePanel::impl
     void update_orientation()
     {
         bool is_horizontal = !(panel_position.value() == "left" or panel_position.value() ==
-            "right"); // not the most pretty, but if the value is top, down or something invalid, it works the
-                      // same
+            "right"); // checking like this also works with the fallback being the top
 
-        if (is_horizontal)
+        auto edge1 = (is_horizontal ? GTK_LAYER_SHELL_EDGE_LEFT : GTK_LAYER_SHELL_EDGE_TOP);
+        auto edge2 = (is_horizontal ? GTK_LAYER_SHELL_EDGE_RIGHT : GTK_LAYER_SHELL_EDGE_BOTTOM);
+
+        gtk_layer_set_anchor(window->gobj(), edge1, full_edge);
+        gtk_layer_set_anchor(window->gobj(), edge2, full_edge);
+
+        gtk_layer_set_margin(window->gobj(), edge1, 0);
+        gtk_layer_set_margin(window->gobj(), edge2, 0);
+
+        set_boxes_orientation(is_horizontal ? Gtk::Orientation::HORIZONTAL : Gtk::Orientation::VERTICAL);
+
+        if (force_center)
         {
-            // if the panel is supposed to expand trough the whole edge, set anchors to stretch it
-            gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_LEFT, full_edge);
-            gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_RIGHT, full_edge);
-
-            gtk_layer_set_margin(window->gobj(), GTK_LAYER_SHELL_EDGE_LEFT, 0);
-            gtk_layer_set_margin(window->gobj(), GTK_LAYER_SHELL_EDGE_RIGHT, 0);
-
-            set_boxes_orientation(Gtk::Orientation::HORIZONTAL);
-
-            if (force_center)
+            if (is_horizontal)
             {
                 sides_size_group->set_mode(Gtk::SizeGroup::Mode::HORIZONTAL);
                 left_box.set_halign(Gtk::Align::END);
                 right_box.set_halign(Gtk::Align::START);
+                left_box.set_valign(Gtk::Align::CENTER);
+                right_box.set_valign(Gtk::Align::CENTER);
+            } else
+            {
+                sides_size_group->set_mode(Gtk::SizeGroup::Mode::VERTICAL);
+                left_box.set_valign(Gtk::Align::END);
+                right_box.set_valign(Gtk::Align::START);
+                left_box.set_halign(Gtk::Align::CENTER);
+                right_box.set_halign(Gtk::Align::CENTER);
+            }
+        } else
+        {
+            if (is_horizontal)
+            {
+                sides_size_group->set_mode(Gtk::SizeGroup::Mode::NONE);
+                left_box.set_halign(Gtk::Align::START);
+                right_box.set_halign(Gtk::Align::END);
                 left_box.set_valign(Gtk::Align::CENTER);
                 right_box.set_valign(Gtk::Align::CENTER);
             } else
@@ -121,32 +140,6 @@ class WayfirePanel::impl
                 right_box.set_valign(Gtk::Align::END);
                 left_box.set_halign(Gtk::Align::CENTER);
                 right_box.set_halign(Gtk::Align::CENTER);
-            }
-        } else
-        {
-            gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_TOP, full_edge);
-            gtk_layer_set_anchor(window->gobj(), GTK_LAYER_SHELL_EDGE_BOTTOM, full_edge);
-
-            gtk_layer_set_margin(window->gobj(), GTK_LAYER_SHELL_EDGE_TOP, 0);
-            gtk_layer_set_margin(window->gobj(), GTK_LAYER_SHELL_EDGE_BOTTOM, 0);
-
-            set_boxes_orientation(Gtk::Orientation::VERTICAL);
-            sides_size_group->set_mode(Gtk::SizeGroup::Mode::VERTICAL);
-
-            if (force_center)
-            {
-                sides_size_group->set_mode(Gtk::SizeGroup::Mode::VERTICAL);
-                left_box.set_valign(Gtk::Align::END);
-                right_box.set_valign(Gtk::Align::START);
-                left_box.set_halign(Gtk::Align::CENTER);
-                right_box.set_halign(Gtk::Align::CENTER);
-            } else
-            {
-                sides_size_group->set_mode(Gtk::SizeGroup::Mode::NONE);
-                left_box.set_halign(Gtk::Align::START);
-                right_box.set_halign(Gtk::Align::END);
-                left_box.set_valign(Gtk::Align::CENTER);
-                right_box.set_valign(Gtk::Align::CENTER);
             }
         }
     }
