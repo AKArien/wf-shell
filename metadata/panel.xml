@@ -12,7 +12,7 @@
 	<option name="widgets_left" type="string">
 		<_short>Widgets Left/Top</_short>
  		<_long>
- 			Widgets placed in the left zone of the bar, or top if the bar is vertical.
+Widgets placed in the left zone of the bar, or top if the bar is vertical.
  		</_long>
 		<default>menu spacing4 launchers window-list</default>
 	</option>
@@ -23,7 +23,7 @@
 	<option name="widgets_right" type="string">
 		<_short>Widgets Right/Bottom</_short>
  		<_long>
- 			Widgets placed in the right zone of the bar, or bottom if the bar is vertical.
+Widgets placed in the right zone of the bar, or bottom if the bar is vertical.
  		</_long>
 		<default>volume network battery clock</default>
 	</option>
@@ -31,13 +31,13 @@
 		<_short>Minimal Height</_short>
 		<default>32</default>
  		<_long>
- 			Minimum height the panel takes.
+Minimum height the panel takes.
  		</_long>
 	</option>
 	<option name="minimal_width" type="int">
 		<_short>Minimal Width</_short>
  		<_long>
- 			Minimum width the panel takes.
+Minimum width the panel takes.
  		</_long>
 		<default>32</default>
 	</option>
@@ -49,9 +49,10 @@
 		<default>true</default>
 	</option>
 	<option name="force_center" type="bool">
-		<_short>Force even spacing</_short>
+		<_short>Force center by widgets</_short>
 		<_long>
-			If on, the left and right of the panel always take the same amount of space and the panel is always centered on the middle of the screen. This will lead to unused space on the side that has the least space taken up by the widgets.
+If on, the widgets on the left and right of the panel always take the same amount of space and the widgets in center are forced in the middle of the screen.
+This will lead to unused space on the side that has the least space taken up by the widgets.
 		</_long>
 		<default>false</default>
 	</option>
@@ -62,21 +63,21 @@
 	<option name="autohide_duration" type="int">
 		<_short>Autohide animation duration</_short>
 		<_long>
-			Time (in milliseconds) the panel takes to expand and retract
+Time (in milliseconds) the panel takes to expand and retract
 		</_long>
 		<default>300</default>
 	</option>
 	<option name="autohide_show_delay" type="int">
 		<_short>Autohide show delay</_short>
 		<_long>
-			Amount of time (in milliseconds) the cursor needs to be in the zone before showing.
+Amount of time (in milliseconds) the cursor needs to be in the zone before showing.
 		</_long>
 		<default>300</default>
 	</option>
 	<option name="autohide_hide_delay" type="int">
 		<_short>Autohide hide delay</_short>
 		<_long>
-			Amount of time (in milliseconds) the cursor needs to be out of the zone before hiding.
+Amount of time (in milliseconds) the cursor needs to be out of the zone before hiding.
 		</_long>
 		<default>500</default>
 	</option>
