@@ -78,7 +78,6 @@ class WayfirePanel::impl
 
     WfOption<int> minimal_panel_height{"panel/minimal_height"};
     WfOption<int> minimal_panel_width{"panel/minimal_width"};
-    WfOption<bool> full_edge{"panel/span_full_edge"};
     WfOption<bool> force_center{"panel/force_center"};
 
     WfOption<std::string> panel_position{"panel/position"};
@@ -95,15 +94,6 @@ class WayfirePanel::impl
     {
         bool is_horizontal = !(panel_position.value() == "left" or panel_position.value() ==
             "right"); // checking like this also works with the fallback being the top
-
-        auto edge1 = (is_horizontal ? GTK_LAYER_SHELL_EDGE_LEFT : GTK_LAYER_SHELL_EDGE_TOP);
-        auto edge2 = (is_horizontal ? GTK_LAYER_SHELL_EDGE_RIGHT : GTK_LAYER_SHELL_EDGE_BOTTOM);
-
-        gtk_layer_set_anchor(window->gobj(), edge1, full_edge);
-        gtk_layer_set_anchor(window->gobj(), edge2, full_edge);
-
-        gtk_layer_set_margin(window->gobj(), edge1, 0);
-        gtk_layer_set_margin(window->gobj(), edge2, 0);
 
         set_boxes_orientation(is_horizontal ? Gtk::Orientation::HORIZONTAL : Gtk::Orientation::VERTICAL);
 
@@ -377,25 +367,6 @@ class WayfirePanel::impl
     impl(WayfireOutput *output) : output(output)
     {
         sides_size_group = Gtk::SizeGroup::create(Gtk::SizeGroup::Mode::NONE);
-
-        // Intentionally leaking feels bad.
-        new CssFromConfigInt("panel/launchers_size", ".menu-button,.launcher{-gtk-icon-size:", "px;}");
-        new CssFromConfigInt("panel/launchers_spacing", ".launcher{padding: 0px ", "px;}");
-        new CssFromConfigInt("panel/battery_icon_size", ".battery image{-gtk-icon-size:", "px;}");
-        new CssFromConfigInt("panel/network_icon_size", ".network{-gtk-icon-size:", "px;}");
-        new CssFromConfigInt("panel/volume_icon_size", ".volume{-gtk-icon-size:", "px;}");
-        new CssFromConfigInt("panel/notifications_icon_size", ".notification-center{-gtk-icon-size:", "px;}");
-        new CssFromConfigInt("panel/tray_icon_size", ".tray-button{-gtk-icon-size:", "px;}");
-        new CssFromConfigString("panel/background_color", ".wf-panel{background-color:", ";}");
-        new CssFromConfigBool("panel/battery_icon_invert", ".battery image{filter:invert(100%);}", "");
-        new CssFromConfigBool("panel/network_icon_invert_color", ".network-icon{filter:invert(100%);}", "");
-
-        // People will probably need to update sizes to have a measure
-        // 16px, 1.1rem, 1em .
-        // So on
-        new CssFromConfigFont("panel/battery_font", ".battery {", "}");
-        new CssFromConfigFont("panel/clock_font", ".clock {", "}");
-
         create_window();
     }
 

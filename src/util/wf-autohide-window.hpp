@@ -27,11 +27,12 @@ class WayfireAutohidingWindow : public Gtk::Window
     /**
      * WayfireAutohidingWindow's behavior can be modified with several config file options:
      * 1. section/position
-     * 2. section/autohide_duration
-     * 3. section/edge_offset
-     * 4. section/autohide
-     * 5. section/autohide_show_delay
-     * 6. section/autohide_hide_delay
+     * 2. section/span_full_edge
+     * 3. section/autohide_duration
+     * 4. section/edge_offset
+     * 5. section/autohide
+     * 6. section/autohide_show_delay
+     * 7. section/autohide_hide_delay
      */
     WayfireAutohidingWindow(WayfireOutput *output, const std::string& section);
     WayfireAutohidingWindow(WayfireAutohidingWindow&&) = delete;
@@ -81,6 +82,7 @@ class WayfireAutohidingWindow : public Gtk::Window
     WayfireOutput *output;
 
     WfOption<std::string> position;
+    WfOption<bool> span_full_edge;
     void update_position();
 
     wf::animation::simple_animation_t autohide_animation;

@@ -13,6 +13,7 @@
 WayfireAutohidingWindow::WayfireAutohidingWindow(WayfireOutput *output,
     const std::string& section) :
     position{section + "/position"},
+    span_full_edge{section + "/span_full_edge"},
     autohide_animation{WfOption<int>{section + "/autohide_duration"}},
     edge_offset{section + "/edge_offset"},
     autohide_opt{section + "/autohide"},
@@ -27,6 +28,7 @@ WayfireAutohidingWindow::WayfireAutohidingWindow(WayfireOutput *output,
     gtk_layer_set_namespace(this->gobj(), "panel");
 
     this->position.set_callback([=] () { this->update_position(); });
+    this->span_full_edge.set_callback([=] () { this->update_position(); });
     this->update_position();
 
     auto pointer_gesture = Gtk::EventControllerMotion::create();
@@ -175,6 +177,20 @@ void WayfireAutohidingWindow::update_position()
     /* Set new anchor */
     GtkLayerShellEdge anchor = get_anchor_edge(position);
     gtk_layer_set_anchor(this->gobj(), anchor, true);
+
+    if (span_full_edge)
+    {
+        if (anchor == GTK_LAYER_SHELL_EDGE_TOP || anchor == GTK_LAYER_SHELL_EDGE_BOTTOM)
+        {
+            gtk_layer_set_anchor(this->gobj(), GTK_LAYER_SHELL_EDGE_LEFT, true);
+            gtk_layer_set_anchor(this->gobj(), GTK_LAYER_SHELL_EDGE_RIGHT, true);
+        }
+        else if (anchor == GTK_LAYER_SHELL_EDGE_LEFT || anchor == GTK_LAYER_SHELL_EDGE_RIGHT)
+        {
+            gtk_layer_set_anchor(this->gobj(), GTK_LAYER_SHELL_EDGE_TOP, true);
+            gtk_layer_set_anchor(this->gobj(), GTK_LAYER_SHELL_EDGE_BOTTOM, true);
+        }
+    }
 
     if (!output->output)
     {
