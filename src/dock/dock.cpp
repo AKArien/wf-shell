@@ -84,7 +84,6 @@ class WfDock::impl
         {
             box.set_min_children_per_line(std::numeric_limits<int>::max());
             box.set_max_children_per_line(std::numeric_limits<int>::max());
-
         } else
         {
             box.set_min_children_per_line(entries_per_line);

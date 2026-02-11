@@ -27,7 +27,7 @@ class WayfireAutohidingWindow : public Gtk::Window
     /**
      * WayfireAutohidingWindow's behavior can be modified with several config file options:
      * 1. section/position
-     * 2. section/span_full_edge
+     * 2. section/full_span
      * 3. section/autohide_duration
      * 4. section/edge_offset
      * 5. section/minimal_height
