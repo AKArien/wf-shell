@@ -124,7 +124,6 @@ class WayfirePanel::impl
                 right_box.set_valign(Gtk::Align::END);
                 left_box.set_halign(Gtk::Align::CENTER);
                 right_box.set_halign(Gtk::Align::CENTER);
-
             }
         }
     }

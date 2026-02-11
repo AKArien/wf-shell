@@ -2,6 +2,7 @@
 #include <glibmm.h>
 #include <gdk/wayland/gdkwayland.h>
 #include <gtk4-layer-shell.h>
+#include <limits>
 
 #include "dock.hpp"
 #include "wf-shell-app.hpp"
@@ -34,16 +35,12 @@ class WfDock::impl
         gtk_layer_set_margin(window->gobj(), GTK_LAYER_SHELL_EDGE_LEFT, 0);
         gtk_layer_set_margin(window->gobj(), GTK_LAYER_SHELL_EDGE_RIGHT, 0);
 
-        // out_box.append(box);
-        // out_box.get_style_context()->add_class("out-box");
         box.add_css_class("box");
 
         window->set_child(box);
         update_layout();
 
         window->add_css_class("wf-dock");
-
-        // out_box.set_halign(Gtk::Align::CENTER);
 
         if (css_path.value() != "")
         {
@@ -82,8 +79,17 @@ class WfDock::impl
             box.set_direction(Gtk::TextDirection::LTR);
         }
 
-        box.set_min_children_per_line(entries_per_line);
-        box.set_max_children_per_line(entries_per_line);
+        // 0 means no overflowing, so we just set the limits really high
+        if (entries_per_line == 0)
+        {
+            box.set_min_children_per_line(std::numeric_limits<int>::max());
+            box.set_max_children_per_line(std::numeric_limits<int>::max());
+
+        } else
+        {
+            box.set_min_children_per_line(entries_per_line);
+            box.set_max_children_per_line(entries_per_line);
+        }
     }
 
     void add_child(Gtk::Widget& widget)
