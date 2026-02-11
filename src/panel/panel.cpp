@@ -111,10 +111,20 @@ class WayfirePanel::impl
         } else
         {
             sides_size_group->set_mode(Gtk::SizeGroup::Mode::NONE);
-            left_box.set_halign(Gtk::Align::START);
-            right_box.set_halign(Gtk::Align::END);
-            left_box.set_valign(Gtk::Align::CENTER);
-            right_box.set_valign(Gtk::Align::CENTER);
+
+            if (is_horizontal){
+                left_box.set_halign(Gtk::Align::START);
+                right_box.set_halign(Gtk::Align::END);
+                left_box.set_valign(Gtk::Align::CENTER);
+                right_box.set_valign(Gtk::Align::CENTER);
+            } else
+            {
+                left_box.set_valign(Gtk::Align::START);
+                right_box.set_valign(Gtk::Align::END);
+                left_box.set_halign(Gtk::Align::CENTER);
+                right_box.set_halign(Gtk::Align::CENTER);
+
+            }
         }
     }
 
