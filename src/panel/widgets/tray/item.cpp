@@ -9,7 +9,6 @@
 #include <glib-object.h>
 #include <giomm/dbusmenumodel.h>
 
-#include <iostream>
 #include <cassert>
 
 static std::pair<Glib::ustring, Glib::ustring> name_and_obj_path(const Glib::ustring & service)
@@ -149,11 +148,6 @@ void StatusNotifierItem::init_widget()
         } else if (butt == tertiary_click)
         {
             item_proxy->call("SecondaryActivate", ev_coords);
-        } else
-        {
-            // Don't claim other buttons
-            click_gesture->set_state(Gtk::EventSequenceState::DENIED);
-            return;
         }
 
         return;

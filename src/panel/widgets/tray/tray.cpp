@@ -1,5 +1,4 @@
 #include "tray.hpp"
-#include "gtkmm/enums.h"
 
 void WayfireStatusNotifier::init(Gtk::Box *container)
 {
@@ -36,9 +35,9 @@ void WayfireStatusNotifier::remove_item(const Glib::ustring & service)
 
 void WayfireStatusNotifier::update_layout()
 {
-    std::string panel_position = WfOption<std::string>{"panel/position"};
+    WfOption<std::string> panel_position{"panel/position"};
 
-    if (panel_position == PANEL_POSITION_LEFT or panel_position == PANEL_POSITION_RIGHT)
+    if (panel_position.value() == PANEL_POSITION_LEFT || panel_position.value() == PANEL_POSITION_RIGHT)
     {
         icons_box.set_orientation(Gtk::Orientation::VERTICAL);
     } else

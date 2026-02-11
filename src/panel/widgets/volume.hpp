@@ -1,13 +1,12 @@
 #pragma once
 
+#include "../widget.hpp"
 #include <gtkmm/image.h>
+#include "../../util/animated-scale.hpp"
 
 #include <pulse/pulseaudio.h>
 #include <gvc-mixer-control.h>
 #include <wayfire/util/duration.hpp>
-
-#include "../widget.hpp"
-#include "../../util/animated-scale.hpp"
 
 class WayfireVolume : public WayfireWidget
 {
@@ -48,9 +47,8 @@ class WayfireVolume : public WayfireWidget
     };
 
     /**
-     * Set the current volume level to volume_level.
-     * This updates both the popover scale and the real pulseaudio volume,
-     * depending on the passed flags.
+     * Set the current volume level to volume_level. This updates both the popover scale and the real
+     * pulseaudio volume, depending on the passed flags.
      *
      * Precondition: volume_level should be between 0 and max_norm
      */

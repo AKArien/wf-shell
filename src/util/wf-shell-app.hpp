@@ -30,7 +30,8 @@ struct WayfireOutput
 /**
  * A basic shell application.
  *
- * It is suitable for applications that need to show one or more windows per monitor.
+ * It is suitable for applications that need to show one or more windows
+ * per monitor.
  */
 class WayfireShellApp
 {
@@ -39,7 +40,8 @@ class WayfireShellApp
     std::vector<Glib::RefPtr<Gtk::CssProvider>> css_rules;
 
   protected:
-    /** This should be initialized by the subclass in each program which uses wf-shell-app */
+    /** This should be initialized by the subclass in each program which uses
+     * wf-shell-app */
     static std::unique_ptr<WayfireShellApp> instance;
     std::optional<std::string> cmdline_config;
     std::optional<std::string> cmdline_css;
@@ -50,7 +52,8 @@ class WayfireShellApp
     virtual void add_output(GMonitor monitor);
     virtual void rem_output(GMonitor monitor);
 
-    /* The following functions can be overridden in the shell implementation to handle the events */
+    /* The following functions can be overridden in the shell implementation to
+     * handle the events */
     virtual void on_activate();
     virtual bool parse_cfgfile(const Glib::ustring & option_name,
         const Glib::ustring & value, bool has_value);
@@ -83,7 +86,8 @@ class WayfireShellApp
 
     /**
      * WayfireShellApp is a singleton class.
-     * Using this function, any part of the application can get access to the shell app.
+     * Using this function, any part of the application can get access to the
+     * shell app.
      */
     static WayfireShellApp& get();
 };

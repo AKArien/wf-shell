@@ -199,7 +199,8 @@ static bool fuzzy_match(Glib::ustring text, Glib::ustring pattern)
             ++j;
         } else
         {
-            /* Try to match current unmatched character in pattern with the next character in text */
+            /* Try to match current unmatched character in pattern with the next
+             * character in text */
             ++j;
         }
     }
@@ -315,7 +316,7 @@ void WayfireMenu::load_menu_item(AppInfo app_info)
     loaded_apps.insert({name, exec});
 
     /* Check if this has a 'OnlyShownIn' for a different desktop env
-     * If so, we throw it in a pile at the bottom just to be safe */
+    *  If so, we throw it in a pile at the bottom just to be safe */
     if (!app_info->should_show())
     {
         add_category_app("Hidden", app_info);

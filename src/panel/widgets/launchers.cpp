@@ -165,9 +165,9 @@ void WayfireLaunchers::init(Gtk::Box *container)
 
 void WayfireLaunchers::update_layout()
 {
-    std::string panel_position = WfOption<std::string>{"panel/position"};
+    WfOption<std::string> panel_position{"panel/position"};
 
-    if (panel_position == PANEL_POSITION_LEFT or panel_position == PANEL_POSITION_RIGHT)
+    if (panel_position.value() == PANEL_POSITION_LEFT or panel_position.value() == PANEL_POSITION_RIGHT)
     {
         box.set_orientation(Gtk::Orientation::VERTICAL);
     } else

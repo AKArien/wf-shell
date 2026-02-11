@@ -68,6 +68,7 @@ WfSingleNotification::WfSingleNotification(const Notification & notification)
     app_name.add_css_class("app-name");
     top_bar.append(app_name);
 
+
     time_label.set_sensitive(false);
     time_label.set_label(format_recv_time(notification.additional_info.recv_time));
     time_label.add_css_class("time");

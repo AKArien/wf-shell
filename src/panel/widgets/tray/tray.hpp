@@ -1,7 +1,6 @@
 #pragma once
 
 #include "item.hpp"
-#include "wf-option-wrap.hpp"
 #include "widgets/tray/host.hpp"
 
 #include <widget.hpp>
