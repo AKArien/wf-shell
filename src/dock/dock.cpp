@@ -17,8 +17,6 @@ class WfDock::impl
     Gtk::FlowBox box;
 
     WfOption<std::string> css_path{"dock/css_path"};
-    WfOption<int> dock_width{"dock/dock_width"};
-    WfOption<int> dock_height{"dock/dock_height"};
     WfOption<std::string> position{"dock/position"};
     WfOption<int> entries_per_line{"dock/max_per_line"};
 
@@ -63,11 +61,12 @@ class WfDock::impl
     }
 
     void update_layout(){
-        window->set_default_size(dock_width, dock_height);
-
         if (position.value() == "bottom")
         {
-
+            // this is not great, but we lack better options without doing a
+            // layout with boxes in boxes (ugly) or some sort of custom layout manager
+            box.set_orientation(Gtk::Orientation::HORIZONTAL);
+            box.set_direction(Gtk::TextDirection::LTR);
         }
         else if (position.value() == "left")
         {
@@ -79,7 +78,7 @@ class WfDock::impl
             box.set_orientation(Gtk::Orientation::VERTICAL);
             box.set_direction(Gtk::TextDirection::RTL);
         }
-        else
+        else // top
         {
             box.set_orientation(Gtk::Orientation::HORIZONTAL);
             box.set_direction(Gtk::TextDirection::LTR);

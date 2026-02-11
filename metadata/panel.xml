@@ -44,7 +44,7 @@ Minimum width the panel takes.
 	<option name="span_full_edge" type="bool">
 		<_short>Span whole side</_short>
 		<_long>
-			Wether the pannel should extend all the way to the left and right; or top and bottom depending on orientation.
+Wether the pannel should extend all the way to the left and right; or top and bottom depending on orientation.
 		</_long>
 		<default>true</default>
 	</option>

@@ -76,12 +76,6 @@ class WayfirePanel::impl
         }
     };
 
-    WfOption<int> minimal_panel_height{"panel/minimal_height"};
-    WfOption<int> minimal_panel_width{"panel/minimal_width"};
-    WfOption<bool> force_center{"panel/force_center"};
-
-    WfOption<std::string> panel_position{"panel/position"};
-
     void set_boxes_orientation(Gtk::Orientation orientation)
     {
         content_box.set_orientation(orientation);
@@ -89,6 +83,9 @@ class WayfirePanel::impl
         center_box.set_orientation(orientation);
         right_box.set_orientation(orientation);
     }
+
+    WfOption<std::string> panel_position{"panel/position"};
+    WfOption<bool> force_center{"panel/force_center"};
 
     void update_orientation()
     {
@@ -137,8 +134,6 @@ class WayfirePanel::impl
     void create_window()
     {
         window = std::make_unique<WayfireAutohidingWindow>(output, "panel");
-
-        window->set_default_size(minimal_panel_width, minimal_panel_height);
 
         window->get_style_context()->add_class("wf-panel");
         panel_layer.set_callback(set_panel_layer);

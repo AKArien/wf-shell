@@ -30,9 +30,11 @@ class WayfireAutohidingWindow : public Gtk::Window
      * 2. section/span_full_edge
      * 3. section/autohide_duration
      * 4. section/edge_offset
-     * 5. section/autohide
-     * 6. section/autohide_show_delay
-     * 7. section/autohide_hide_delay
+     * 5. section/minimal_height
+     * 6. section/minimal_width
+     * 7. section/autohide
+     * 8. section/autohide_show_delay
+     * 9. section/autohide_hide_delay
      */
     WayfireAutohidingWindow(WayfireOutput *output, const std::string& section);
     WayfireAutohidingWindow(WayfireAutohidingWindow&&) = delete;
@@ -91,6 +93,9 @@ class WayfireAutohidingWindow : public Gtk::Window
 
     WfOption<int> edge_offset;
     int last_edge_offset = -1;
+
+    WfOption<int> minimal_height;
+    WfOption<int> minimal_width;
 
     WfOption<bool> autohide_opt;
     WfOption<int> autohide_show_delay;

@@ -16,6 +16,8 @@ WayfireAutohidingWindow::WayfireAutohidingWindow(WayfireOutput *output,
     span_full_edge{section + "/span_full_edge"},
     autohide_animation{WfOption<int>{section + "/autohide_duration"}},
     edge_offset{section + "/edge_offset"},
+    minimal_height{section + "/minimal_height"},
+    minimal_width{section + "/minimal_width"},
     autohide_opt{section + "/autohide"},
     autohide_show_delay{section + "/autohide_show_delay"},
     autohide_hide_delay{section + "/autohide_hide_delay"}
@@ -30,6 +32,11 @@ WayfireAutohidingWindow::WayfireAutohidingWindow(WayfireOutput *output,
     this->position.set_callback([=] () { this->update_position(); });
     this->span_full_edge.set_callback([=] () { this->update_position(); });
     this->update_position();
+
+    const auto set_size = [=] () { this->set_default_size(minimal_width, minimal_height); };
+    this->minimal_height.set_callback(set_size);
+    this->minimal_width.set_callback(set_size);
+    set_size();
 
     auto pointer_gesture = Gtk::EventControllerMotion::create();
     pointer_gesture->signal_enter().connect([=] (double x, double y)
