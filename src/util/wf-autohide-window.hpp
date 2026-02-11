@@ -84,7 +84,7 @@ class WayfireAutohidingWindow : public Gtk::Window
     WayfireOutput *output;
 
     WfOption<std::string> position;
-    WfOption<bool> span_full_edge;
+    WfOption<bool> full_span;
     void update_position();
 
     wf::animation::simple_animation_t autohide_animation;

@@ -112,7 +112,8 @@ class WayfirePanel::impl
         {
             sides_size_group->set_mode(Gtk::SizeGroup::Mode::NONE);
 
-            if (is_horizontal){
+            if (is_horizontal)
+            {
                 left_box.set_halign(Gtk::Align::START);
                 right_box.set_halign(Gtk::Align::END);
                 left_box.set_valign(Gtk::Align::CENTER);
