@@ -187,12 +187,11 @@ void WayfireAutohidingWindow::update_position()
 
     if (span_full_edge)
     {
-        if (anchor == GTK_LAYER_SHELL_EDGE_TOP || anchor == GTK_LAYER_SHELL_EDGE_BOTTOM)
+        if ((anchor == GTK_LAYER_SHELL_EDGE_TOP) || (anchor == GTK_LAYER_SHELL_EDGE_BOTTOM))
         {
             gtk_layer_set_anchor(this->gobj(), GTK_LAYER_SHELL_EDGE_LEFT, true);
             gtk_layer_set_anchor(this->gobj(), GTK_LAYER_SHELL_EDGE_RIGHT, true);
-        }
-        else if (anchor == GTK_LAYER_SHELL_EDGE_LEFT || anchor == GTK_LAYER_SHELL_EDGE_RIGHT)
+        } else if ((anchor == GTK_LAYER_SHELL_EDGE_LEFT) || (anchor == GTK_LAYER_SHELL_EDGE_RIGHT))
         {
             gtk_layer_set_anchor(this->gobj(), GTK_LAYER_SHELL_EDGE_TOP, true);
             gtk_layer_set_anchor(this->gobj(), GTK_LAYER_SHELL_EDGE_BOTTOM, true);
@@ -254,19 +253,11 @@ static zwf_hotspot_v2_listener hotspot_listener = {
 
 void WayfireAutohidingWindow::setup_hotspot()
 {
-    /* No need to recreate hotspots if the height didn't change */
-
     auto position = check_position(this->position);
 
-    int allocated;
-    if (position == WF_WINDOW_POSITION_LEFT or position == WF_WINDOW_POSITION_RIGHT)
-    {
-        allocated = this->get_allocated_width();
-    } else
-    {
-        allocated = this->get_allocated_height();
-    }
+    int allocated = (this->*get_allocated_height_or_width)();
 
+    /* No need to recreate hotspots if the nothing changed */
     if ((allocated == last_hotspot_size) && (edge_offset == last_edge_offset) && (position == last_position))
     {
         return;

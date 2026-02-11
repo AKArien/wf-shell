@@ -60,25 +60,23 @@ class WfDock::impl
             window->get_surface()->gobj());
     }
 
-    void update_layout(){
+    void update_layout()
+    {
         if (position.value() == "bottom")
         {
             // this is not great, but we lack better options without doing a
             // layout with boxes in boxes (ugly) or some sort of custom layout manager
             box.set_orientation(Gtk::Orientation::HORIZONTAL);
             box.set_direction(Gtk::TextDirection::LTR);
-        }
-        else if (position.value() == "left")
+        } else if (position.value() == "left")
         {
             box.set_orientation(Gtk::Orientation::VERTICAL);
             box.set_direction(Gtk::TextDirection::LTR);
-        }
-        else if (position.value() == "right")
+        } else if (position.value() == "right")
         {
             box.set_orientation(Gtk::Orientation::VERTICAL);
             box.set_direction(Gtk::TextDirection::RTL);
-        }
-        else // top
+        } else // top
         {
             box.set_orientation(Gtk::Orientation::HORIZONTAL);
             box.set_direction(Gtk::TextDirection::LTR);
