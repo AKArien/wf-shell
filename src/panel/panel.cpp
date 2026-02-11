@@ -52,6 +52,9 @@ class WayfirePanel::impl
 
     WayfireOutput *output;
 
+    WfOption<std::string> panel_position{"panel/position"};
+    WfOption<bool> force_center{"panel/force_center"};
+
     WfOption<std::string> panel_layer{"panel/layer"};
     std::function<void()> set_panel_layer = [=] ()
     {
@@ -84,9 +87,6 @@ class WayfirePanel::impl
         right_box.set_orientation(orientation);
     }
 
-    WfOption<std::string> panel_position{"panel/position"};
-    WfOption<bool> force_center{"panel/force_center"};
-
     void update_orientation()
     {
         bool is_horizontal = !(panel_position.value() == "left" or panel_position.value() ==
@@ -96,38 +96,25 @@ class WayfirePanel::impl
 
         if (force_center)
         {
+            left_box.set_halign(Gtk::Align::CENTER);
+            right_box.set_halign(Gtk::Align::CENTER);
+            left_box.set_valign(Gtk::Align::CENTER);
+            right_box.set_valign(Gtk::Align::CENTER);
+
             if (is_horizontal)
             {
                 sides_size_group->set_mode(Gtk::SizeGroup::Mode::HORIZONTAL);
-                left_box.set_halign(Gtk::Align::END);
-                right_box.set_halign(Gtk::Align::START);
-                left_box.set_valign(Gtk::Align::CENTER);
-                right_box.set_valign(Gtk::Align::CENTER);
             } else
             {
                 sides_size_group->set_mode(Gtk::SizeGroup::Mode::VERTICAL);
-                left_box.set_valign(Gtk::Align::END);
-                right_box.set_valign(Gtk::Align::START);
-                left_box.set_halign(Gtk::Align::CENTER);
-                right_box.set_halign(Gtk::Align::CENTER);
             }
         } else
         {
-            if (is_horizontal)
-            {
-                sides_size_group->set_mode(Gtk::SizeGroup::Mode::NONE);
-                left_box.set_halign(Gtk::Align::START);
-                right_box.set_halign(Gtk::Align::END);
-                left_box.set_valign(Gtk::Align::CENTER);
-                right_box.set_valign(Gtk::Align::CENTER);
-            } else
-            {
-                sides_size_group->set_mode(Gtk::SizeGroup::Mode::NONE);
-                left_box.set_valign(Gtk::Align::START);
-                right_box.set_valign(Gtk::Align::END);
-                left_box.set_halign(Gtk::Align::CENTER);
-                right_box.set_halign(Gtk::Align::CENTER);
-            }
+            sides_size_group->set_mode(Gtk::SizeGroup::Mode::NONE);
+            left_box.set_halign(Gtk::Align::START);
+            right_box.set_halign(Gtk::Align::END);
+            left_box.set_valign(Gtk::Align::CENTER);
+            right_box.set_valign(Gtk::Align::CENTER);
         }
     }
 
@@ -135,7 +122,7 @@ class WayfirePanel::impl
     {
         window = std::make_unique<WayfireAutohidingWindow>(output, "panel");
 
-        window->get_style_context()->add_class("wf-panel");
+        window->add_css_class("wf-panel");
         panel_layer.set_callback(set_panel_layer);
         set_panel_layer(); // initial setting
 
