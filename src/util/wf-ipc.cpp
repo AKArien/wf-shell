@@ -48,8 +48,8 @@ WayfireIPC::WayfireIPC()
 
 WayfireIPC::~WayfireIPC()
 {
-	if (connected)
-	{
+    if (connected)
+    {
         disconnect();
     }
 }
@@ -62,8 +62,8 @@ bool WayfireIPC::connect()
         std::cerr << "Wayfire socket not found" << std::endl;
         return false;
     }
-    try
-    {
+
+    try {
         auto client  = Gio::SocketClient::create();
         auto address = Gio::UnixSocketAddress::create(socket_path);
         connection = client->connect(address);

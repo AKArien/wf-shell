@@ -205,7 +205,8 @@ class WayfirePanel::impl
                 return Widget(new WayfireLanguage());
             } else
             {
-                std::cerr << "Wayfire IPC not connected, which is required to load language widget." << std::endl;
+                std::cerr << "Wayfire IPC not connected, which is required to load language widget." <<
+                std::endl;
                 return nullptr;
             }
         }
