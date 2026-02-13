@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -31,34 +32,54 @@
 
 WayfireIPC::WayfireIPC()
 {
-    connect();
+    if (connect())
+    {
+        sig_connection = Glib::signal_io().connect(
+            sigc::mem_fun(*this, &WayfireIPC::receive),
+            connection->get_socket()->get_fd(),
+            Glib::IOCondition::IO_IN);
 
-    sig_connection = Glib::signal_io().connect(
-        sigc::mem_fun(*this, &WayfireIPC::receive),
-        connection->get_socket()->get_fd(),
-        Glib::IOCondition::IO_IN);
+        connected = true;
+    } else
+    {
+        std::cerr << "Failed to connect to WAYFIRE_SOCKET. Is wayfire ipc plugin enabled?" << std::endl;
+    }
 }
 
 WayfireIPC::~WayfireIPC()
 {
-    disconnect();
+	if (connected)
+	{
+        disconnect();
+    }
 }
 
-void WayfireIPC::connect()
+bool WayfireIPC::connect()
 {
     const char *socket_path = getenv("WAYFIRE_SOCKET");
-    if (socket_path == nullptr)
+    if (!socket_path || std::string(socket_path).empty())
     {
-        throw std::runtime_error("Wayfire socket not found");
+        std::cerr << "Wayfire socket not found" << std::endl;
+        return false;
+    }
+    try
+    {
+        auto client  = Gio::SocketClient::create();
+        auto address = Gio::UnixSocketAddress::create(socket_path);
+        connection = client->connect(address);
+        connection->get_socket()->set_blocking(false);
+        output = connection->get_output_stream();
+        input  = connection->get_input_stream();
+        cancel = Gio::Cancellable::create();
+
+        return true;
+    } catch (const Glib::Error& ex)
+    {
+        std::cerr << "Error connecting to WAYFIRE_SOCKET: " << ex.what();
+        return false;
     }
 
-    auto client  = Gio::SocketClient::create();
-    auto address = Gio::UnixSocketAddress::create(socket_path);
-    connection = client->connect(address);
-    connection->get_socket()->set_blocking(false);
-    output = connection->get_output_stream();
-    input  = connection->get_input_stream();
-    cancel = Gio::Cancellable::create();
+    return false;
 }
 
 void WayfireIPC::disconnect()

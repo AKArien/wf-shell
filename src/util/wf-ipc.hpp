@@ -58,7 +58,7 @@ class WayfireIPC : public std::enable_shared_from_this<WayfireIPC>
     std::queue<std::string> write_queue;
     bool writing = false;
 
-    void connect();
+    bool connect();
     void disconnect();
     void send_message(const std::string& message);
     bool send_queue(Glib::IOCondition cond);
@@ -76,6 +76,7 @@ class WayfireIPC : public std::enable_shared_from_this<WayfireIPC>
     void client_destroyed(int id);
 
     static std::shared_ptr<WayfireIPC> get_instance();
+    bool connected = false;
     WayfireIPC();
     ~WayfireIPC();
 };
