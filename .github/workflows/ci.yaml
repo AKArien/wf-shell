@@ -7,8 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     container: alpine:latest
     steps:
-      - run: echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories # only needed for wayfire-dev
-      - run: |
+      - name: Add testing repository
+        run: echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories # only needed for wayfire-dev
+
+      - name: Install dependencies
+        run: |
           apk --no-cache add \
             git \
             g++ \
@@ -34,39 +37,49 @@ jobs:
             wayfire-dev \
             gtk4-layer-shell-dev
 
-      - name: wf-shell
+      - name: Checkout
         uses: actions/checkout@v7
         with:
           repository: WayfireWM/wf-shell
           path: wf-shell
-      - run: |
+
+      - name: Build
+        run: |
           cd wf-shell
           meson setup build --prefix=/usr
           ninja -v -C build
           ninja -v -C build install
+
   test_code_style:
     name: "Check code style with uncrustify"
     runs-on: ubuntu-latest
     steps:
-      - run: |
+      - name: Install dependencies
+        run: |
           sudo apt-get update
           sudo apt-get install -y git cmake gcc make
-      - name: Build Uncrustify
+
+      - name: Checkout uncrustify
         uses: actions/checkout@v7
         with:
           repository: ammen99/uncrustify
           path: uncrustify
-      - run: |
+
+      - name: Build uncrustify
+        run: |
           cd uncrustify
           mkdir build
           cd build
           cmake ..
           make
-      - name: Run Uncrustify Check
+
+      - name: Checkout wf-shell
         uses: actions/checkout@v7
         with:
           path: wf-shell
-      - run: |
+
+      - name: Run uncrustify check
+        run: |
           cd wf-shell
           wget https://raw.githubusercontent.com/WayfireWM/wayfire/master/uncrustify.ini
           git ls-files | grep "hpp$\|cpp$" | xargs ../uncrustify/build/uncrustify -c uncrustify.ini --no-backup --replace
