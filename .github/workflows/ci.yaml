@@ -16,7 +16,7 @@ jobs:
       - run: apk --no-cache add wayland-protocols wayfire-dev gtk4-layer-shell-dev gtk4-layer-shell
 
       - name: wf-shell
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
         with:
           repository: WayfireWM/wf-shell
           path: wf-shell
@@ -28,13 +28,13 @@ jobs:
       - run: sudo apt-get update
       - run: sudo apt-get install -y git cmake gcc make
       - name: Build Uncrustify
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
         with:
           repository: ammen99/uncrustify
           path: uncrustify
       - run: cd uncrustify && mkdir build && cd build && cmake .. && make && cd ../..
       - name: Run Uncrustify Check
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
         with:
           path: wf-shell
       - run: cd wf-shell && wget https://raw.githubusercontent.com/WayfireWM/wayfire/master/uncrustify.ini
