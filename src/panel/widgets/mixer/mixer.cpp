@@ -6,9 +6,6 @@
 #include "mixer-control.hpp"
 #include "icon-select.hpp"
 
-#define ICON(volume) icon_from_range(volume_icons, volume)
-
-
 void WayfireMixer::reload_config()
 {
     // adjust margins and spacing
@@ -281,17 +278,11 @@ void WayfireMixer::update_icon()
     // depends on quick_target widget
     if (!quick_target)
     {
-        main_image.set_from_icon_name(ICON(-1)); // OOR
+        main_image.set_from_icon_name(icon_from_range(volume_icons, -1)); // OOR
         return;
     }
 
-    if (quick_target->button.get_active())
-    {
-        main_image.set_from_icon_name(ICON(0)); // mute
-        return;
-    }
-
-    main_image.set_from_icon_name(ICON(quick_target->get_scale_target_value()));
+    main_image.set_from_icon_name(quick_target->get_icon_name());
 }
 
 void WayfireMixer::set_quick_target_from(MixerControl *from)

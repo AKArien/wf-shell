@@ -148,7 +148,7 @@ void WpCommon::add_object_to_widget(WpPipewireObject *object, WayfireMixer *widg
     } else if (type == "Audio/Source")
     {
         which_box = &(widget->sources_box);
-        control   = new MixerControlDevice(object, widget);
+        control   = new MixerControlDevice(object, widget, mic_volume_icons);
         recheck_default = true;
     } else if (type == "Stream/Output/Audio")
     {

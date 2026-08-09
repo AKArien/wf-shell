@@ -2,14 +2,13 @@
 #include <gtkmm.h>
 
 #include "mixer-control.hpp"
-#include "icon-select.hpp"
 
-#define ICON(volume) icon_from_range(volume_icons, volume)
-
-MixerControl::MixerControl(WpPipewireObject *obj, WayfireMixer *parent_widget)
+MixerControl::MixerControl(WpPipewireObject *obj, WayfireMixer *parent_widget, const std::map<double,
+    std::vector<std::string>> _icon_set)
 {
-    object = obj;
-    parent = parent_widget;
+    object   = obj;
+    parent   = parent_widget;
+    icon_set = _icon_set;
 }
 
 MixerControl::~MixerControl()
@@ -145,12 +144,17 @@ void MixerControl::update_icon()
     if (button.get_active())
     {
         add_css_class("muted");
-        volume_icon.set_from_icon_name(ICON(0)); // mute
+        volume_icon.set_from_icon_name(icon_from_range(icon_set, 0)); // mute
         return;
     }
 
     remove_css_class("muted");
-    volume_icon.set_from_icon_name(ICON(get_scale_target_value()));
+    volume_icon.set_from_icon_name(icon_from_range(icon_set, get_scale_target_value()));
+}
+
+std::string MixerControl::get_icon_name()
+{
+    return volume_icon.get_icon_name();
 }
 
 double MixerControl::get_scale_target_value()
@@ -214,7 +218,7 @@ void MixerControl::handle_config_reload()
 // used to make a copy to the face of the widget
 std::unique_ptr<MixerControl> MixerControl::copy()
 {
-    return std::make_unique<MixerControl>(object, parent);
+    return std::make_unique<MixerControl>(object, parent, icon_set);
 }
 
 MixerControlDevice::~MixerControlDevice()
