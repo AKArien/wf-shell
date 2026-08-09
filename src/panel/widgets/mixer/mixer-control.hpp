@@ -1,10 +1,10 @@
 #pragma once
 
 #include <gtkmm.h>
-#include <mutex>
 
 #include "mixer.hpp"
 #include "animated-scale.hpp"
+#include "icon-select.hpp"
 
 class WayfireMixer;
 
@@ -22,10 +22,12 @@ class MixerControl : public Gtk::Grid
     std::vector<sigc::connection> signals;
     void update_gestures();
     virtual void update_icons_pos();
+    std::map<double, std::vector<std::string>> icon_set;
     WfOption<int> slider_length{"panel/mixer_slider_length"};
 
   public:
-    MixerControl(WpPipewireObject *obj, WayfireMixer *parent_widget);
+    MixerControl(WpPipewireObject *obj, WayfireMixer *parent_widget, const std::map<double,
+        std::vector<std::string>> icon_set = volume_icons);
     ~MixerControl();
     virtual void init();
 
@@ -36,6 +38,7 @@ class MixerControl : public Gtk::Grid
     void set_scale_target_value(double volume);
     double get_scale_target_value();
     void update_icon();
+    std::string get_icon_name();
     // used to mark the control as the source of changes and stop useless/counterproductive updates
     bool ignore = false; // set when volume changes because of it to ignore refresh of ui
 
@@ -57,7 +60,8 @@ class MixerControlDevice : public MixerControl
     void update_icons_pos();
 
   public:
-    MixerControlDevice(WpPipewireObject *obj, WayfireMixer *parent_widget) : MixerControl(obj, parent_widget)
+    MixerControlDevice(WpPipewireObject *obj, WayfireMixer *parent_widget, const std::map<double,
+        std::vector<std::string>> icon_set = volume_icons) : MixerControl(obj, parent_widget, icon_set)
     {}
     ~MixerControlDevice();
     void init();
