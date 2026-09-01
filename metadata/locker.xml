@@ -706,6 +706,10 @@
 	    <_short>Always show</_short>
 		<default>false</default>
 	</option>
+	<option name="volume_scroll_sensitivity" type="double">
+		<_short>Volume Scroll Sensitivity</_short>
+		<default>0.05</default>
+	</option>
 	<option name="volume_icon_size" type="double">
 		<_short>Button size</_short>
 		<default>2.0</default>
