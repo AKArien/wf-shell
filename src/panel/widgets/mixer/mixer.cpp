@@ -248,6 +248,9 @@ void WayfireMixer::init(Gtk::Box *container)
 
     // sinks
     output_label.set_text("Output devices");
+    output_label.set_tooltip_text("Output devices");
+    output_label.set_max_width_chars(0);
+    output_label.set_ellipsize(Pango::EllipsizeMode::END);
     sinks_box.append(output_label);
     out_sep.set_orientation(Gtk::Orientation::HORIZONTAL);
     sinks_box.append(out_sep);
@@ -255,6 +258,9 @@ void WayfireMixer::init(Gtk::Box *container)
 
     // sources
     input_label.set_text("Input devices");
+    input_label.set_tooltip_text("Input devices");
+    input_label.set_max_width_chars(0);
+    input_label.set_ellipsize(Pango::EllipsizeMode::END);
     sources_box.append(input_label);
     in_sep.set_orientation(Gtk::Orientation::HORIZONTAL);
     sources_box.append(in_sep);
@@ -262,6 +268,9 @@ void WayfireMixer::init(Gtk::Box *container)
 
     // streams
     streams_label.set_text("Audio streams");
+    streams_label.set_tooltip_text("Audio streams");
+    streams_label.set_max_width_chars(0);
+    streams_label.set_ellipsize(Pango::EllipsizeMode::END);
     streams_box.append(streams_label);
     streams_sep.set_orientation(Gtk::Orientation::HORIZONTAL);
     streams_box.append(streams_sep);
@@ -269,7 +278,10 @@ void WayfireMixer::init(Gtk::Box *container)
 
     // captures
     captures_label.set_text("Audio captures");
+    captures_label.set_tooltip_text("Audio captures");
     captures_box.append(captures_label);
+    captures_label.set_max_width_chars(0);
+    captures_label.set_ellipsize(Pango::EllipsizeMode::END);
     captures_sep.set_orientation(Gtk::Orientation::HORIZONTAL);
     captures_box.append(captures_sep);
     captures_box.set_orientation(Gtk::Orientation::VERTICAL);
